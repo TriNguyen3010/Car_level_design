@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Car Sort — Level &amp; Feel Tool</title>
+<link rel="stylesheet" href="css/tool.css">
+</head>
+<body>
+<div id="app">
+  <div id="top">
+    <button id="prevLv" title="Level trước">◀</button>
+    <span class="badge">Level <b id="lvName">1</b> <span id="lvCount" style="color:var(--ink-dim)"></span></span>
+    <button id="nextLv" title="Level sau">▶</button>
+    <span class="sep"></span>
+    <span class="badge" id="movesBadge">Moves <b>0</b></span>
+    <span class="badge" id="sizeBadge">4×4</span>
+    <span class="sep"></span>
+    <button id="restart">Restart</button>
+    <button id="undo">Undo</button>
+    <button id="hint">Hint</button>
+    <button id="autoplay">Autoplay</button>
+    <span class="grow"></span>
+    <span class="badge" id="statusBadge">playing</span>
+  </div>
+
+  <div id="main">
+    <div id="boardWrap">
+      <div id="stage">
+        <div class="overlay win">CLEARED</div>
+        <div class="overlay lose">OUT OF MOVES</div>
+      </div>
+    </div>
+
+    <div id="side">
+      <div id="tabs">
+        <button data-tab="play" class="on">Play</button>
+        <button data-tab="tune">Tune</button>
+        <button data-tab="edit">Edit</button>
+        <button data-tab="feel">Feel</button>
+        <button data-tab="set">Level Set</button>
+      </div>
+      <div id="panels">
+
+        <div class="panel on" data-panel="play">
+          <h3>Level hiện tại</h3>
+          <div class="metrics" id="playMetrics"></div>
+          <h3>Đọc số thế nào</h3>
+          <div class="hint">
+            <b>minMoves</b> lời giải tối ưu (solver biết cả xe ẩn). <b>slack</b> = budget / minMoves —
+            dưới 1.3x là gắt, trên 3x là budget gần như vô nghĩa.<br>
+            <b>forced</b> % lượt chỉ có đúng 1 cột nhận được xe trên pad — player không có quyết định.
+            <b>choice</b> % lượt có ≥2 cột nhận được — đây mới là puzzle.
+            <b>dump</b> % lượt không cột nào nhận được, buộc phải đổ bừa và tự tạo rác.<br>
+            <b>naiveWin</b> tỉ lệ thắng của player bấm greedy + hay nhầm, KHÔNG thấy xe ẩn. 100% = level không hề thử thách.
+          </div>
+          <h3>Move log</h3>
+          <div class="log" id="moveLog">—</div>
+        </div>
+
+        <div class="panel" data-panel="tune">
+          <div class="row">
+            <button class="primary" id="analyze">Analyze level này</button>
+            <label style="min-width:0">node cap</label>
+            <input type="number" id="nodeCap" value="300000" step="50000" style="width:96px">
+            <label style="min-width:0">playouts</label>
+            <input type="number" id="runs" value="300" step="50" style="width:74px">
+            <label style="min-width:0">lỗi tay</label>
+            <input type="number" id="eps" value="0.08" step="0.02" min="0" max="1" style="width:64px">
+          </div>
+          <div class="metrics" id="tuneMetrics"></div>
+          <h3>Đánh giá</h3>
+          <div class="flags" id="tuneFlags"></div>
+          <h3>Move budget</h3>
+          <div class="row">
+            <label>slack mục tiêu</label>
+            <input type="number" id="slackTarget" value="1.6" step="0.1" min="1" style="width:74px">
+            <button id="applyBudget">Set budget = minMoves × slack</button>
+          </div>
+          <h3>Lời giải tối ưu</h3>
+          <div class="log" id="solutionLog">chưa analyze</div>
+        </div>
+
+        <div class="panel" data-panel="edit">
+          <div class="row">
+            <label>cols × rows</label>
+            <input type="number" id="edCols" min="2" max="9" style="width:60px">
+            <input type="number" id="edRows" min="2" max="9" style="width:60px">
+            <label style="min-width:0">moves</label>
+            <input type="number" id="edMoves" min="1" style="width:74px">
+            <label style="min-width:0">theme</label>
+            <select id="edTheme"><option value="city">city</option><option value="suburb">suburb</option></select>
+          </div>
+          <h3>Brush</h3>
+          <div class="swatches" id="brushes"></div>
+          <div class="row" style="margin-top:7px">
+            <label style="min-width:0"><input type="checkbox" id="brushHidden"> tô kèm ẩn (?)</label>
+            <span class="hint" style="margin:0">Click ô = tô. Right-click ô = bật/tắt ẩn.</span>
+          </div>
+          <h3>Grid <span class="hint" style="margin:0">(hàng trên = đỉnh cột, xe chèn vào đây)</span></h3>
+          <div id="editGrid"></div>
+          <div class="row"><label>xe trên pad</label><div id="padCell"></div></div>
+          <h3>Đếm xe</h3>
+          <div class="countList" id="counts"></div>
+          <div class="flags" id="editFlags" style="margin-top:8px"></div>
+          <h3>Generate</h3>
+          <div class="row">
+            <label>số màu</label><input type="number" id="genColors" value="4" min="1" max="9" style="width:60px">
+            <label style="min-width:0">strays</label><input type="number" id="genStrays" value="6" min="0" style="width:60px">
+            <label style="min-width:0">ẩn</label><input type="number" id="genHidden" value="0" min="0" style="width:60px">
+            <label style="min-width:0">seed</label><input type="number" id="genSeed" value="1" style="width:60px">
+          </div>
+          <div class="row">
+            <label><input type="checkbox" id="genRevInGrid" checked> xe ngược chiều nằm trong grid</label>
+            <button id="genBtn">Generate vào level này</button>
+          </div>
+          <div class="hint">Sinh từ bàn đã giải rồi chỉ đổi chỗ 2 xe, nên luôn hợp lệ. <b>strays</b> = số lần đổi chỗ, là dial độ khó chính. Muốn có <b>choice</b> thật thì đặt số màu &lt; số cột — khi đó 2 cột cùng màu và player phải chọn.</div>
+        </div>
+
+        <div class="panel" data-panel="feel">
+          <div class="row">
+            <label>preset</label>
+            <select id="feelPreset"></select>
+            <button id="feelReset">Reset</button>
+            <label style="min-width:0"><input type="checkbox" id="sfxOn" checked> SFX</label>
+          </div>
+          <div id="feelSliders"></div>
+          <h3>Feel JSON</h3>
+          <textarea id="feelJson" rows="9" spellcheck="false"></textarea>
+          <div class="row"><button id="feelLoad">Load JSON này</button><button id="feelCopy">Copy</button></div>
+        </div>
+
+        <div class="panel" data-panel="set">
+          <div class="row">
+            <button class="primary" id="runAll">Analyze cả set</button>
+            <button id="addLevel">+ Level</button>
+            <button id="dupLevel">Duplicate</button>
+            <button id="delLevel">Delete</button>
+          </div>
+          <div id="setTableWrap"><table class="grid" id="setTable"></table></div>
+          <h3>Curve</h3>
+          <div id="curve"></div>
+          <h3>Export</h3>
+          <div class="row">
+            <button class="primary" id="exportBtn">Xuất JSON set</button>
+            <button id="downloadBtn">Download .json</button>
+            <button id="importBtn">Import từ textarea</button>
+          </div>
+          <textarea id="exportJson" rows="14" spellcheck="false"></textarea>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="src/engine.js"></script>
+<script src="src/levels.js"></script>
+<script src="src/solver.js"></script>
+<script src="src/gen.js"></script>
+<script src="src/feel.js"></script>
+<script src="src/render.js"></script>
+<script src="src/tool.js"></script>
+</body>
+</html>
