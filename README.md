@@ -66,6 +66,10 @@ Xem **ASSETS.md**. Tóm tắt: đưa 1 xe trắng/xám 512², em nhuộm ra cả
 
 Bật **dùng sprite** ở tab Feel để xem ngay trong game. Thiếu file nào thì xe CSS tự động thế chỗ, không vỡ layout.
 
+## Giải thích số ngay trong tool
+
+Mọi chỉ số đều có dấu <b>?</b> bấm được, mở ra giải thích kèm ví dụ lấy từ chính 10 level này (`src/help.js`). Có badge cho: độ khó, độ sâu, lỗi tay, slack, playout/phương án, gộp 2 màu, xe lạ, màu/cột, forced/choice/dump, minMoves, naiveWin, trần win, trap, xe ẩn, xe ngược chiều, auto-sort, đường cong budget.
+
 ## Đọc số
 
 | Số | Nghĩa | Vùng tốt |

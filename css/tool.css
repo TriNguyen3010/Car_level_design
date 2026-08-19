@@ -317,3 +317,43 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
 .log { font-family: ui-monospace, Menlo, monospace; font-size: 11px; color: var(--ink-dim);
        max-height: 150px; overflow: auto; background: #10131a; border: 1px solid var(--line);
        border-radius: 7px; padding: 7px 9px; white-space: pre-wrap; }
+
+/* ---------- help badges ---------- */
+.help {
+  display: inline-grid; place-items: center; width: 14px; height: 14px;
+  border-radius: 50%; border: 1px solid var(--line); color: var(--ink-dim);
+  font-size: 10px; font-weight: 700; line-height: 1; cursor: pointer;
+  vertical-align: middle; margin-left: 5px; user-select: none; flex: none;
+}
+.help::after { content: '?'; }
+.help:hover { border-color: var(--accent); color: var(--accent); }
+.help.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+.metric .k { display: flex; align-items: center; }
+
+.help-pop {
+  position: fixed; z-index: 999; width: min(560px, calc(100vw - 24px));
+  max-height: min(72vh, 680px); overflow: auto;
+  background: var(--panel); border: 1px solid var(--accent); border-radius: 11px;
+  padding: 13px 15px 15px; box-shadow: 0 14px 44px rgba(0,0,0,.6);
+}
+.help-title { font-size: 14px; font-weight: 700; margin-bottom: 6px; padding-right: 22px; }
+.help-body { color: var(--ink); margin-bottom: 8px; }
+.help-list { margin: 0 0 8px; padding-left: 17px; color: var(--ink-dim); }
+.help-list li { margin-bottom: 3px; }
+.help-list b { color: var(--ink); }
+.help-ex {
+  background: #10131a; border: 1px solid var(--line); border-radius: 7px;
+  padding: 9px 11px; margin: 0 0 8px; font-family: ui-monospace, Menlo, monospace;
+  font-size: 11px; line-height: 1.55; color: var(--ink-dim); white-space: pre-wrap;
+  overflow-x: auto;
+}
+.help-ex b { color: var(--ink); }
+.help-note {
+  border-left: 3px solid var(--warn); background: rgba(232,177,58,.07);
+  padding: 7px 10px; border-radius: 0 6px 6px 0; color: var(--ink-dim);
+}
+.help-note b { color: var(--ink); }
+.help-close {
+  position: absolute; top: 9px; right: 10px; width: 22px; height: 22px;
+  padding: 0; border-radius: 6px; line-height: 1;
+}

@@ -170,9 +170,10 @@
 
   /* ---------------- metrics ---------------- */
 
-  function metricCard(parent, key, value, note, cls) {
+  function metricCard(parent, key, value, note, cls, topic) {
     var m = el('div', 'metric' + (cls ? ' ' + cls : ''), parent);
-    el('div', 'k', m, key);
+    var k = el('div', 'k', m, key);
+    if (topic) k.appendChild(global.Help.badge(topic));
     el('div', 'v', m, value);
     if (note) el('div', 'n', m, note);
   }
@@ -203,7 +204,7 @@
     metricCard(box, 'budget', String(L.moves));
     var v = E.validate(L);
     metricCard(box, 'màu', String(Object.keys(v.counts || {}).filter(function (k) { return k !== REV; }).length),
-               v.hidden ? v.hidden + ' xe ẩn' : 'không xe ẩn');
+               v.hidden ? v.hidden + ' xe ẩn' : 'không xe ẩn', '', 'mau-cot');
     if (!a) {
       metricCard(box, 'phân tích', '—', 'bấm Analyze ở tab Tune');
       return;
@@ -211,9 +212,9 @@
     metricCard(box, 'minMoves', String(a.minMoves) + (a.exact ? '' : '~'), a.exact ? 'tối ưu' : 'greedy (chưa chắc tối ưu)');
     metricCard(box, 'slack', a.slack ? a.slack.toFixed(1) + 'x' : '—', 'budget / minMoves', slackClass(a.slack));
     metricCard(box, 'forced', pct(a.forcedRatio), 'không có lựa chọn');
-    metricCard(box, 'choice', pct(a.choiceRatio), '≥2 cột nhận được', choiceClass(a.choiceRatio));
+    metricCard(box, 'choice', pct(a.choiceRatio), '≥2 cột nhận được', choiceClass(a.choiceRatio), 'do-sau');
     metricCard(box, 'dump', pct(a.dumpRatio), 'buộc đổ bừa');
-    metricCard(box, 'naiveWin', pct(a.naive.winRate), 'player bấm greedy', naiveClass(a.naive.winRate));
+    metricCard(box, 'naiveWin', pct(a.naive.winRate), 'player bấm greedy', naiveClass(a.naive.winRate), 'naive-win');
   }
 
   function analyzeCurrent() {
@@ -246,20 +247,20 @@
   function renderTuneMetrics(a) {
     var box = clear($('tuneMetrics'));
     if (!a) return;
-    metricCard(box, 'minMoves', String(a.minMoves) + (a.exact ? '' : '~'), a.exact ? 'IDA* tối ưu' : 'greedy upper bound');
+    metricCard(box, 'minMoves', String(a.minMoves) + (a.exact ? '' : '~'), a.exact ? 'IDA* tối ưu' : 'greedy upper bound', '', 'minmoves');
     metricCard(box, 'budget', String(a.budget));
-    metricCard(box, 'slack', a.slack ? a.slack.toFixed(2) + 'x' : '—', 'budget / minMoves', slackClass(a.slack));
-    metricCard(box, 'forced', pct(a.forcedRatio), null);
-    metricCard(box, 'choice', pct(a.choiceRatio), 'quyết định thật', choiceClass(a.choiceRatio));
-    metricCard(box, 'dump', pct(a.dumpRatio), 'đổ bừa');
+    metricCard(box, 'slack', a.slack ? a.slack.toFixed(2) + 'x' : '—', 'budget / minMoves', slackClass(a.slack), 'slack');
+    metricCard(box, 'forced', pct(a.forcedRatio), null, '', 'forced-choice-dump');
+    metricCard(box, 'choice', pct(a.choiceRatio), 'quyết định thật', choiceClass(a.choiceRatio), 'do-sau');
+    metricCard(box, 'dump', pct(a.dumpRatio), 'đổ bừa', '', 'forced-choice-dump');
     metricCard(box, 'branch', a.branchFactor ? a.branchFactor.toFixed(1) : '—', 'cột hợp lệ / lượt');
-    metricCard(box, 'naiveWin', pct(a.naive.winRate), a.naive.runs + ' playout', naiveClass(a.naive.winRate));
+    metricCard(box, 'naiveWin', pct(a.naive.winRate), a.naive.runs + ' playout', naiveClass(a.naive.winRate), 'naive-win');
     metricCard(box, 'hết moves', pct(a.naive.outOfMoves), 'player thua vì hết move');
     metricCard(box, 'naive moves', a.naive.avgMoves ? a.naive.avgMoves.toFixed(1) : '—', 'khi thắng');
-    metricCard(box, 'xe ẩn', String(a.hidden));
+    metricCard(box, 'xe ẩn', String(a.hidden), null, '', 'xe-an');
     if (a.trap) {
       metricCard(box, 'trap', a.trap.avgExtraMoves == null ? '—' : '+' + a.trap.avgExtraMoves.toFixed(1),
-                 'move phí khi tap sai (' + a.trap.samples + ' mẫu)');
+                 'move phí khi tap sai (' + a.trap.samples + ' mẫu)', '', 'trap');
     }
   }
 
@@ -308,15 +309,16 @@
   function renderTunerScore(m) {
     var box = clear($('tunerScore'));
     if (!m || !m.valid) { metricCard(box, 'độ khó', '—', 'level chưa hợp lệ'); return; }
-    metricCard(box, 'độ khó', String(m.D), '0 = ai cũng thắng, 100 = gần như thua', bandClass(m.D));
-    metricCard(box, 'độ sâu', String(m.depth), '% lượt có quyết định thật', m.depth < 10 ? 'bad' : m.depth < 25 ? 'warn' : 'good');
-    metricCard(box, 'win — giỏi', pct(m.winCareful), 'lỗi tay 2%');
-    metricCard(box, 'win — trung bình', pct(m.winAvg), 'lỗi tay 10%', naiveClass(m.winAvg));
-    metricCard(box, 'win — ẩu', pct(m.winSloppy), 'lỗi tay 25%');
-    metricCard(box, 'slack', m.slack ? m.slack.toFixed(2) + 'x' : '—', 'budget / lời giải thực tế', slackClass(m.slack));
-    metricCard(box, 'xe lạ', String(m.strays), 'xe không nằm đúng cột màu của nó');
+    metricCard(box, 'độ khó', String(m.D), '0 = ai cũng thắng, 100 = gần như thua', bandClass(m.D), 'do-kho');
+    metricCard(box, 'độ sâu', String(m.depth), '% lượt có quyết định thật', m.depth < 10 ? 'bad' : m.depth < 25 ? 'warn' : 'good', 'do-sau');
+    metricCard(box, 'win — giỏi', pct(m.winCareful), 'lỗi tay 2%', '', 'loi-tay');
+    metricCard(box, 'win — trung bình', pct(m.winAvg), 'lỗi tay 10%', naiveClass(m.winAvg), 'loi-tay');
+    metricCard(box, 'win — ẩu', pct(m.winSloppy), 'lỗi tay 25%', '', 'loi-tay');
+    metricCard(box, 'slack', m.slack ? m.slack.toFixed(2) + 'x' : '—', 'budget / lời giải thực tế', slackClass(m.slack), 'slack');
+    metricCard(box, 'xe lạ', String(m.strays), 'xe không nằm đúng cột màu của nó', '', 'xe-la');
     metricCard(box, 'màu / cột', m.colors + ' / ' + level().cols,
-               m.colors < level().cols ? 'có cột trùng màu → có lựa chọn' : 'mỗi màu 1 cột → chuỗi ép');
+               m.colors < level().cols ? 'có cột trùng màu → có lựa chọn' : 'mỗi màu 1 cột → chuỗi ép',
+               '', 'mau-cot');
   }
 
   function measureCurrent() {
@@ -357,7 +359,10 @@
                   (item.delta > 0 ? '+' : '') + item.delta + ' khó');
       var dD = el('span', 'badge ' + (item.deltaDepth > 0 ? 'good' : item.deltaDepth < 0 ? 'warn' : ''), head,
                   (item.deltaDepth > 0 ? '+' : '') + item.deltaDepth + ' sâu');
-      el('b', null, head, item.lever);
+      var lname = el('b', null, head, item.lever);
+      var leverTopic = { 'Số màu': 'gop-mau', 'Xe lạ': 'xe-la', 'Move budget': 'slack',
+                         'Xe ẩn': 'xe-an', 'Kích thước': 'mau-cot' }[item.lever];
+      if (leverTopic) lname.appendChild(global.Help.badge(leverTopic));
       var apply = el('button', 'primary', head, 'Áp dụng');
       apply.addEventListener('click', function () {
         levels[idx] = item.level;
@@ -439,7 +444,13 @@
     var box = clear($('ptSummary'));
     var t = el('table', 'grid', box);
     var hr = el('tr', null, el('thead', null, t));
-    ['player', 'lỗi tay', 'win @ budget ' + rep.level.moves, 'trần win', 'p50', 'p90', 'budget 90%', 'budget 75%', 'budget 60%'].forEach(function (h) { el('th', null, hr, h); });
+    var heads = [['player', ''], ['lỗi tay', 'loi-tay'], ['win @ budget ' + rep.level.moves, ''],
+                 ['trần win', 'ceiling'], ['p50', ''], ['p90', ''],
+                 ['budget 90%', 'budget-curve'], ['budget 75%', 'budget-curve'], ['budget 60%', 'budget-curve']];
+    heads.forEach(function (h) {
+      var th = el('th', null, hr, h[0]);
+      if (h[1]) th.appendChild(global.Help.badge(h[1]));
+    });
     var tb = el('tbody', null, t);
     rep.profiles.forEach(function (p) {
       var tr = el('tr', null, tb);
