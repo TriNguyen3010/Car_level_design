@@ -3,7 +3,7 @@
 Web prototype + level editor. Mở bằng:
 
 ```bash
-python3 -m http.server 5173
+python3 tools/serve.py 5173
 ```
 
 rồi vào `http://localhost:5173`. Không build step, không dependency.
@@ -25,11 +25,46 @@ rồi vào `http://localhost:5173`. Không build step, không dependency.
 | `src/engine.js` | Luật thuần. Không DOM, không timer, không random. Tool và solver dùng chung. |
 | `src/solver.js` | IDA* tìm `minMoves`, greedy upper bound, playout đo win rate, phân loại quyết định. |
 | `src/gen.js` | Sinh level. Bắt đầu từ bàn đã giải rồi chỉ đổi chỗ 2 xe, nên luôn hợp lệ. |
+| `src/playtest.js` | Chạy hàng vạn ván với budget vô hạn, dựng đường cong budget → win rate. |
+| `src/playtest-worker.js` | Chạy playtest ngoài main thread. |
+| `src/tuner.js` | Đòn bẩy độ khó + gợi ý có đo đạc. |
 | `src/feel.js` | Mọi timing / easing / juice + SFX synth. Không ảnh hưởng luật. |
 | `src/render.js` | Hình học bàn + animation. Mọi con số lấy từ `feel.js`. |
 | `src/tool.js` | UI: play, tune, edit, feel, export. |
 
 Auto-sort nằm trong `engine.js`, **không** nằm ở UI — nếu để ở UI thì solver sẽ đo sai.
+
+## Cân chỉnh ở mức cao (tab Tune)
+
+Bấm **Muốn khó hơn** / **Muốn dễ hơn**. Tool dựng một level ứng viên cho từng đòn bẩy, **playtest thật từng cái**, rồi xếp theo tác động đo được. Không phỏng đoán.
+
+Năm đòn bẩy, và chúng không giống nhau chút nào khi chơi:
+
+| Đòn bẩy | Tác động điển hình |
+|---|---|
+| **Move budget** | Mạnh nhất khi slack đang lỏng. Siết từ 3x xuống 1.35x biến move count từ số trang trí thành sức ép thật. |
+| **Kích thước (số hàng)** | Cột dài hơn ⇒ xe lạ nằm sâu hơn ⇒ tốn nhiều move moi ra. Rất gắt khi budget đã chặt. |
+| **Số xe lạ** | Cột có ≥2 xe lạ thì auto-sort không kích, player phải tự lo thứ tự. |
+| **Xe ẩn** | Chặn lập kế hoạch. Lộ ngay khi cột bị tap nên tác dụng ngắn — đừng lạm dụng. |
+| **Số màu** | **Đổi ĐỘ SÂU, không đổi độ khó.** Ít màu hơn số cột ⇒ 2 cột cùng màu ⇒ nhiều quyết định thật, nhưng cũng nhiều chỗ nhả xe đúng hơn nên tỉ lệ thua thường **giảm**. |
+
+Hai trục tách riêng: **độ khó** là tỉ lệ thua, **độ sâu** là số quyết định. Level nhạt và level dễ là hai bệnh khác nhau, thuốc cũng khác.
+
+## Playtest (tab Playtest)
+
+Chạy 10.000 ván với **budget không giới hạn** rồi ghi lại số move thực dùng, cho 3 hạng player (lỗi tay 2% / 10% / 25%). Một lượt chạy cho ra luôn cả đường cong, nên câu hỏi không còn là "50 move có ổn không" mà là **"muốn win rate bao nhiêu thì đặt budget mấy"**.
+
+Chạy trong Web Worker (~1.2s cho 10k). Tab nền bóp `setTimeout` xuống 1s/lần nên chunk trên main thread từng mất 18s cho đúng công việc đó.
+
+## Asset
+
+Xem **ASSETS.md**. Tóm tắt: đưa 1 xe trắng/xám 512², em nhuộm ra cả 18 màu — hình dạng giống nhau tuyệt đối.
+
+- `recolor.html` — thả file vào, kéo slider, download PNG hoặc spritesheet
+- `tools/recolor.py` — bản CLI, đọc palette thẳng từ `src/levels.js`
+- `tools/make_placeholder_car.py` — sinh xe placeholder để test pipeline trước khi có art thật
+
+Bật **dùng sprite** ở tab Feel để xem ngay trong game. Thiếu file nào thì xe CSS tự động thế chỗ, không vỡ layout.
 
 ## Đọc số
 
@@ -48,6 +83,10 @@ Auto-sort nằm trong `engine.js`, **không** nằm ở UI — nếu để ở U
 ## Phím tắt
 
 `1`-`9` tap cột · `r` restart · `u`/`z` undo · `h` hint · `←`/`→` đổi level
+
+## Git
+
+`main` giữ bản trước khi có tuner/playtest/asset. Muốn quay lại: `git checkout main`.
 
 ## Export
 

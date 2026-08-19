@@ -4,7 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Car Sort — Level &amp; Feel Tool</title>
-<link rel="stylesheet" href="css/tool.css">
+<!-- Dev tool: the stylesheet is written with a cache-busting token because
+     Chrome keeps it in the per-tab memory cache even when the server says
+     no-store, and a stale sheet silently breaks the board layout. -->
+<script>document.write('<link rel="stylesheet" href="css/tool.css?t=' + Date.now() + '">');</script>
 </head>
 <body>
 <div id="app">
@@ -37,6 +40,7 @@
         <button data-tab="play" class="on">Play</button>
         <button data-tab="tune">Tune</button>
         <button data-tab="edit">Edit</button>
+        <button data-tab="playtest">Playtest</button>
         <button data-tab="feel">Feel</button>
         <button data-tab="set">Level Set</button>
       </div>
@@ -59,6 +63,18 @@
         </div>
 
         <div class="panel" data-panel="tune">
+          <h3>Cân chỉnh độ khó</h3>
+          <div class="metrics" id="tunerScore"></div>
+          <div class="row" style="margin-top:9px">
+            <button class="primary" id="wantHarder">Muốn khó hơn</button>
+            <button class="primary" id="wantEasier">Muốn dễ hơn</button>
+            <label style="min-width:0">playout / phương án</label>
+            <input type="number" id="suggestRuns" value="900" step="300" style="width:82px">
+            <span id="suggestProgress" class="hint" style="margin:0"></span>
+          </div>
+          <div id="suggestions"></div>
+
+          <h3>Phân tích solver</h3>
           <div class="row">
             <button class="primary" id="analyze">Analyze level này</button>
             <label style="min-width:0">node cap</label>
@@ -117,12 +133,31 @@
           <div class="hint">Sinh từ bàn đã giải rồi chỉ đổi chỗ 2 xe, nên luôn hợp lệ. <b>strays</b> = số lần đổi chỗ, là dial độ khó chính. Muốn có <b>choice</b> thật thì đặt số màu &lt; số cột — khi đó 2 cột cùng màu và player phải chọn.</div>
         </div>
 
+        <div class="panel" data-panel="playtest">
+          <div class="row">
+            <button class="primary" id="runPlaytest">Chạy playtest</button>
+            <label style="min-width:0">số lần</label>
+            <input type="number" id="ptRuns" value="10000" step="1000" style="width:96px">
+            <label style="min-width:0"><input type="checkbox" id="ptBlind" checked> player không thấy xe ẩn</label>
+            <span id="ptProgress" class="hint" style="margin:0"></span>
+          </div>
+          <div class="hint">Mỗi lần chơi được chạy với budget <b>không giới hạn</b> rồi ghi lại số move thực dùng. Một lượt chạy cho ra luôn cả đường cong budget → win rate, nên câu hỏi không còn là "50 move có ổn không" mà là "muốn win rate bao nhiêu thì đặt budget mấy".</div>
+          <div id="ptSummary"></div>
+          <h3>Budget → win rate</h3>
+          <div id="ptCurve"></div>
+          <h3>Số move thực dùng</h3>
+          <div id="ptHist"></div>
+          <h3>Kết luận</h3>
+          <div class="flags" id="ptFlags"></div>
+        </div>
+
         <div class="panel" data-panel="feel">
           <div class="row">
             <label>preset</label>
             <select id="feelPreset"></select>
             <button id="feelReset">Reset</button>
             <label style="min-width:0"><input type="checkbox" id="sfxOn" checked> SFX</label>
+            <label style="min-width:0"><input type="checkbox" id="useSprites"> dùng sprite trong assets/</label>
           </div>
           <div id="feelSliders"></div>
           <h3>Feel JSON</h3>
@@ -158,6 +193,8 @@
 <script src="src/levels.js"></script>
 <script src="src/solver.js"></script>
 <script src="src/gen.js"></script>
+<script src="src/playtest.js"></script>
+<script src="src/tuner.js"></script>
 <script src="src/feel.js"></script>
 <script src="src/render.js"></script>
 <script src="src/tool.js"></script>

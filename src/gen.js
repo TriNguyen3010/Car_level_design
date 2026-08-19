@@ -104,4 +104,4 @@
   }
 
   global.Gen = { generate: generate, autoBudget: autoBudget, search: search };
-})(window);
+})(typeof self !== 'undefined' ? self : this);

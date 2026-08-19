@@ -288,6 +288,18 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
   display: grid; place-items: center; position: absolute; inset: 0; z-index: 3;
   color: #7d7fe6; font-weight: 800; font-size: 150%; text-shadow: 0 1px 3px rgba(0,0,0,.6);
 }
+.car-sprite {
+  position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain;
+  display: none; pointer-events: none; z-index: 4;
+}
+.car.use-sprite .car-sprite { display: block; }
+.car.use-sprite .car-sprite[data-missing] { display: none; }
+/* sprite drawn, CSS car hidden — unless the file failed to load */
+.car.use-sprite:not(:has(.car-sprite[data-missing])) .car-body,
+.car.use-sprite:not(:has(.car-sprite[data-missing])) .car-roof,
+.car.use-sprite:not(:has(.car-sprite[data-missing])) .car-glass,
+.car.use-sprite:not(:has(.car-sprite[data-missing])) .car-grill,
+.car.use-sprite:not(:has(.car-sprite[data-missing])) .car-lights { opacity: 0; }
 .car.is-pad { filter: drop-shadow(0 6px 8px rgba(0,0,0,.4)); }
 .car.pop { animation: pop var(--pop-dur) cubic-bezier(.34,1.56,.64,1); }
 @keyframes pop {

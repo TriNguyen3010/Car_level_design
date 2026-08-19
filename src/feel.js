@@ -37,7 +37,9 @@
     cellGap: 0.06,
     shadowStrength: 0.45,
     sfxOn: 1,
-    sfxVolume: 0.25
+    sfxVolume: 0.25,
+    sprites: 0,
+    spritePath: 'assets/car_{color}.png'
   };
 
   /* [key, label, min, max, step, unit] */
@@ -136,4 +138,4 @@
     applyPreset: applyPreset, toJSON: toJSON, load: load,
     moveDuration: moveDuration, Sfx: Sfx
   };
-})(window);
+})(typeof self !== 'undefined' ? self : this);

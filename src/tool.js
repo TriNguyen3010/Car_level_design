@@ -4,6 +4,7 @@
   'use strict';
 
   var E = global.Engine, S = global.Solver, G = global.Gen, F = global.Feel;
+  var PT = global.Playtest, T = global.Tuner;
   var REV = 'REV';
 
   var PALETTE = Object.assign({}, global.LevelData.palette);
@@ -42,6 +43,7 @@
   function loadLevel(i) {
     if (i < 0 || i >= levels.length) return;
     idx = i;
+    lastMeasure = null;
     stopAutoplay();
     var v = E.validate(level());
     if (!v.ok) {
@@ -292,6 +294,265 @@
     f.forEach(function (x) { el('div', 'flag ' + x[0], box, x[1]); });
   }
 
+  /* ---------------- difficulty tuner ---------------- */
+
+  var lastMeasure = null;
+
+  function bandClass(d) {
+    if (d == null) return '';
+    if (d < 20) return 'bad';           // nobody can lose this
+    if (d > 70) return 'warn';
+    return 'good';
+  }
+
+  function renderTunerScore(m) {
+    var box = clear($('tunerScore'));
+    if (!m || !m.valid) { metricCard(box, 'độ khó', '—', 'level chưa hợp lệ'); return; }
+    metricCard(box, 'độ khó', String(m.D), '0 = ai cũng thắng, 100 = gần như thua', bandClass(m.D));
+    metricCard(box, 'độ sâu', String(m.depth), '% lượt có quyết định thật', m.depth < 10 ? 'bad' : m.depth < 25 ? 'warn' : 'good');
+    metricCard(box, 'win — giỏi', pct(m.winCareful), 'lỗi tay 2%');
+    metricCard(box, 'win — trung bình', pct(m.winAvg), 'lỗi tay 10%', naiveClass(m.winAvg));
+    metricCard(box, 'win — ẩu', pct(m.winSloppy), 'lỗi tay 25%');
+    metricCard(box, 'slack', m.slack ? m.slack.toFixed(2) + 'x' : '—', 'budget / lời giải thực tế', slackClass(m.slack));
+    metricCard(box, 'xe lạ', String(m.strays), 'xe không nằm đúng cột màu của nó');
+    metricCard(box, 'màu / cột', m.colors + ' / ' + level().cols,
+               m.colors < level().cols ? 'có cột trùng màu → có lựa chọn' : 'mỗi màu 1 cột → chuỗi ép');
+  }
+
+  function measureCurrent() {
+    var v = E.validate(level());
+    if (!v.ok) { lastMeasure = null; renderTunerScore(null); return null; }
+    lastMeasure = T.measure(level(), 900);
+    renderTunerScore(lastMeasure);
+    return lastMeasure;
+  }
+
+  function askSuggestions(dir) {
+    var v = E.validate(level());
+    if (!v.ok) { note('level chưa hợp lệ'); return; }
+    var box = clear($('suggestions'));
+    el('div', 'hint', box, 'đang playtest từng phương án…');
+    $('wantHarder').disabled = $('wantEasier').disabled = true;
+    T.suggest(level(), dir, PALETTE, { runs: +$('suggestRuns').value || 900 },
+      function (i, n) { $('suggestProgress').textContent = i + '/' + n; },
+      function (res) {
+        $('wantHarder').disabled = $('wantEasier').disabled = false;
+        $('suggestProgress').textContent = '';
+        lastMeasure = res.base;
+        renderTunerScore(res.base);
+        renderSuggestions(res);
+      });
+  }
+
+  function renderSuggestions(res) {
+    var box = clear($('suggestions'));
+    if (!res.items.length) { el('div', 'hint', box, 'không có phương án nào áp dụng được'); return; }
+    el('div', 'hint', box, 'Xếp theo tác động ĐO ĐƯỢC lên độ khó, không phải phỏng đoán — mỗi phương án được playtest thật. ' +
+      'Δkhó là tỉ lệ thua, Δsâu là số quyết định. Hai trục này đi ngược nhau khá thường xuyên.');
+    res.items.forEach(function (item) {
+      var card = el('div', 'card', box);
+      var head = el('div', 'row', card);
+      head.style.marginBottom = '4px';
+      var dK = el('span', 'badge ' + (item.delta > 0 ? 'bad' : item.delta < 0 ? 'good' : ''), head,
+                  (item.delta > 0 ? '+' : '') + item.delta + ' khó');
+      var dD = el('span', 'badge ' + (item.deltaDepth > 0 ? 'good' : item.deltaDepth < 0 ? 'warn' : ''), head,
+                  (item.deltaDepth > 0 ? '+' : '') + item.deltaDepth + ' sâu');
+      el('b', null, head, item.lever);
+      var apply = el('button', 'primary', head, 'Áp dụng');
+      apply.addEventListener('click', function () {
+        levels[idx] = item.level;
+        analysisCache = {};
+        afterEdit();
+        renderSetTable();
+        measureCurrent();
+        note('đã áp dụng: ' + item.label);
+      });
+      el('div', null, card, item.label);
+      el('div', 'hint', card, item.why);
+      el('div', 'hint', card,
+        'sau khi áp dụng: win giỏi ' + pct(item.measure.winCareful) +
+        ' · trung bình ' + pct(item.measure.winAvg) +
+        ' · ẩu ' + pct(item.measure.winSloppy) +
+        ' · slack ' + (item.measure.slack ? item.measure.slack.toFixed(2) + 'x' : '—') +
+        ' · budget ' + item.level.moves);
+    });
+  }
+
+  /* ---------------- 10k playtest ---------------- */
+
+  var lastPt = null;
+
+  var ptWorker = null;
+  function getWorker() {
+    if (ptWorker !== null) return ptWorker;
+    try { ptWorker = new Worker('src/playtest-worker.js'); }
+    catch (e) { ptWorker = false; }          // file:// blocks workers — fall back
+    return ptWorker;
+  }
+
+  function runPlaytest() {
+    var v = E.validate(level());
+    if (!v.ok) { note('level chưa hợp lệ'); return; }
+    var btn = $('runPlaytest');
+    btn.disabled = true;
+    clear($('ptSummary')); clear($('ptCurve')); clear($('ptHist')); clear($('ptFlags'));
+    var L = JSON.parse(JSON.stringify(level()));
+    var runs = +$('ptRuns').value || 10000;
+    var opts = { blind: $('ptBlind').checked, seed: 4242 };
+    $('ptProgress').textContent = 'đang chạy…';
+
+    var w = getWorker();
+    if (w) {
+      w.onmessage = function (e) {
+        btn.disabled = false;
+        if (!e.data.ok) { $('ptProgress').textContent = 'lỗi: ' + e.data.error; return; }
+        $('ptProgress').textContent = e.data.report.ms + 'ms';
+        lastPt = e.data.report;
+        renderPlaytest(e.data.report);
+      };
+      w.onerror = function (err) {
+        ptWorker = false;                    // retry on the main thread
+        w.terminate();
+        btn.disabled = false;
+        note('worker lỗi (' + err.message + '), chạy trên main thread');
+        runPlaytest();
+      };
+      w.postMessage({ cmd: 'run', level: L, runs: runs, opts: opts });
+      return;
+    }
+
+    setTimeout(function () {
+      var t0 = Date.now();
+      var res = PT.runSync(L, runs, opts);
+      var rep = {
+        level: { id: L.id, cols: L.cols, rows: L.rows, moves: L.moves },
+        ms: Date.now() - t0, totalRuns: res.totalRuns, profiles: res.profiles
+      };
+      btn.disabled = false;
+      $('ptProgress').textContent = rep.ms + 'ms';
+      lastPt = rep;
+      renderPlaytest(rep);
+    }, 20);
+  }
+
+  function renderPlaytest(rep) {
+    var box = clear($('ptSummary'));
+    var t = el('table', 'grid', box);
+    var hr = el('tr', null, el('thead', null, t));
+    ['player', 'lỗi tay', 'win @ budget ' + rep.level.moves, 'trần win', 'p50', 'p90', 'budget 90%', 'budget 75%', 'budget 60%'].forEach(function (h) { el('th', null, hr, h); });
+    var tb = el('tbody', null, t);
+    rep.profiles.forEach(function (p) {
+      var tr = el('tr', null, tb);
+      tr.style.cursor = 'default';
+      el('td', null, tr, p.name);
+      el('td', null, tr, Math.round(p.eps * 100) + '%');
+      el('td', naiveClass(p.winRateAtBudget) ? 'f-' + naiveClass(p.winRateAtBudget) : '', tr, pct(p.winRateAtBudget));
+      el('td', null, tr, pct(p.ceiling));
+      el('td', null, tr, String(p.p[0.5] == null ? '—' : p.p[0.5]));
+      el('td', null, tr, String(p.p[0.9] == null ? '—' : p.p[0.9]));
+      el('td', null, tr, String(p.budgetFor[90] == null ? 'không đạt' : p.budgetFor[90]));
+      el('td', null, tr, String(p.budgetFor[75] == null ? 'không đạt' : p.budgetFor[75]));
+      el('td', null, tr, String(p.budgetFor[60] == null ? 'không đạt' : p.budgetFor[60]));
+    });
+
+    renderPtCurve(rep);
+    renderPtHist(rep);
+
+    var f = clear($('ptFlags'));
+    var avg = rep.profiles[1];
+    if (avg.winRateAtBudget > 0.97) {
+      f.appendChild(mkFlag('bad', 'Budget ' + rep.level.moves + ' cho win ' + pct(avg.winRateAtBudget) +
+        ' — move count không phải là cơ chế ở level này. Muốn 75% thì đặt ' + avg.budgetFor[75] + '.'));
+    } else if (avg.winRateAtBudget < 0.4) {
+      f.appendChild(mkFlag('warn', 'Win chỉ ' + pct(avg.winRateAtBudget) + ' — gắt. Budget cho 75% là ' + avg.budgetFor[75] + '.'));
+    } else {
+      f.appendChild(mkFlag('good', 'Win ' + pct(avg.winRateAtBudget) + ' ở budget ' + rep.level.moves + ' — vùng hợp lý.'));
+    }
+    if (avg.ceiling < 0.99) {
+      f.appendChild(mkFlag('warn', pct(1 - avg.ceiling) + ' lượt chơi không bao giờ thắng dù budget vô hạn — ' +
+        'player greedy tự dồn mình vào thế kẹt. Trung bình xong ' +
+        (avg.avgColumnsOnStuck == null ? '?' : avg.avgColumnsOnStuck.toFixed(1)) + '/' + rep.level.cols + ' cột trước khi bí.'));
+    }
+    var spread = rep.profiles[0].winRateAtBudget - rep.profiles[2].winRateAtBudget;
+    f.appendChild(mkFlag(spread > 0.3 ? 'good' : 'warn',
+      'Chênh lệch giỏi vs ẩu: ' + pct(spread) + (spread > 0.3 ? ' — kỹ năng có thưởng.' : ' — kỹ năng gần như không ăn thua.')));
+    var dumps = avg.avgDumps;
+    f.appendChild(mkFlag('', 'Trung bình ' + dumps.toFixed(1) + ' lượt/ván không có cột nào nhận được xe trên pad (phải đổ bừa), ' +
+      'và ' + avg.avgGoodColumns.toFixed(2) + ' cột nhận được mỗi lượt.'));
+  }
+
+  function mkFlag(cls, text) {
+    var d = document.createElement('div');
+    d.className = 'flag' + (cls ? ' ' + cls : '');
+    d.textContent = text;
+    return d;
+  }
+
+  function renderPtCurve(rep) {
+    var box = clear($('ptCurve'));
+    var W = 660, H = 220, padL = 40, padB = 26, padT = 10;
+    var maxB = Math.max.apply(null, rep.profiles.map(function (p) { return p.maxBudget; }));
+    var colors = ['#4ec97a', '#4a90d9', '#e05c4c'];
+    function X(b) { return padL + (b / maxB) * (W - padL - 12); }
+    function Y(w) { return padT + (1 - w) * (H - padT - padB); }
+    var svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;height:auto">';
+    svg += '<rect width="' + W + '" height="' + H + '" fill="#10131a" rx="8"/>';
+    [0.25, 0.5, 0.6, 0.75, 0.9].forEach(function (w) {
+      svg += '<line x1="' + padL + '" y1="' + Y(w) + '" x2="' + (W - 12) + '" y2="' + Y(w) +
+             '" stroke="#2b3140" stroke-width="1"/>' +
+             '<text x="6" y="' + (Y(w) + 3) + '" fill="#93a0b3" font-size="9">' + Math.round(w * 100) + '%</text>';
+    });
+    rep.profiles.forEach(function (p, i) {
+      var pts = p.curve.filter(function (_, j) { return j % 1 === 0; })
+        .map(function (c) { return X(c.budget) + ',' + Y(c.winRate); });
+      svg += '<polyline points="' + pts.join(' ') + '" fill="none" stroke="' + colors[i] + '" stroke-width="2"/>';
+    });
+    var bx = X(rep.level.moves);
+    svg += '<line x1="' + bx + '" y1="' + padT + '" x2="' + bx + '" y2="' + (H - padB) +
+           '" stroke="#e8b13a" stroke-width="2" stroke-dasharray="4 3"/>';
+    svg += '<text x="' + (bx + 4) + '" y="' + (padT + 11) + '" fill="#e8b13a" font-size="10">budget ' + rep.level.moves + '</text>';
+    svg += '<text x="' + padL + '" y="' + (H - 8) + '" fill="#93a0b3" font-size="9">0 move</text>';
+    svg += '<text x="' + (W - 60) + '" y="' + (H - 8) + '" fill="#93a0b3" font-size="9">' + maxB + ' move</text>';
+    svg += '</svg>';
+    box.innerHTML = svg;
+    var legend = el('div', 'hint', box, '');
+    rep.profiles.forEach(function (p, i) {
+      var sp = el('span', null, legend, '■ ' + p.name + '  ');
+      sp.style.color = colors[i];
+    });
+    el('span', null, legend, ' — kẻ vàng là budget đang đặt. Đọc: kéo dọc theo đường tới win rate muốn, rồi nhìn xuống trục để lấy budget.');
+  }
+
+  function renderPtHist(rep) {
+    var box = clear($('ptHist'));
+    var p = rep.profiles[1];
+    var keys = Object.keys(p.histogram).map(Number).sort(function (a, b) { return a - b; });
+    if (!keys.length) { el('div', 'hint', box, 'không có ván nào thắng'); return; }
+    var lo = keys[0], hi = keys[keys.length - 1];
+    var maxN = Math.max.apply(null, keys.map(function (k) { return p.histogram[k]; }));
+    var W = 660, H = 120, padB = 18;
+    var bw = (W - 10) / (hi - lo + 1);
+    var svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;height:auto">';
+    svg += '<rect width="' + W + '" height="' + H + '" fill="#10131a" rx="8"/>';
+    for (var k = lo; k <= hi; k++) {
+      var n = p.histogram[k] || 0;
+      var h = (H - padB - 6) * (n / maxN);
+      var x = 5 + (k - lo) * bw;
+      var over = k > rep.level.moves;
+      svg += '<rect x="' + x + '" y="' + (H - padB - h) + '" width="' + Math.max(1, bw - 1) +
+             '" height="' + h + '" fill="' + (over ? '#e05c4c' : '#4a90d9') + '"/>';
+    }
+    var bx2 = 5 + (rep.level.moves - lo + 1) * bw;
+    if (rep.level.moves >= lo && rep.level.moves <= hi) {
+      svg += '<line x1="' + bx2 + '" y1="0" x2="' + bx2 + '" y2="' + (H - padB) + '" stroke="#e8b13a" stroke-width="2"/>';
+    }
+    svg += '<text x="5" y="' + (H - 5) + '" fill="#93a0b3" font-size="9">' + lo + '</text>';
+    svg += '<text x="' + (W - 30) + '" y="' + (H - 5) + '" fill="#93a0b3" font-size="9">' + hi + '</text>';
+    svg += '</svg>';
+    box.innerHTML = svg;
+    el('div', 'hint', box, 'player trung bình. Cột đỏ = số ván cần nhiều move hơn budget hiện tại, tức là thua.');
+  }
+
   /* ---------------- editor ---------------- */
 
   function renderBrushes() {
@@ -361,6 +622,7 @@
   }
 
   function afterEdit() {
+    lastMeasure = null;
     delete analysisCache[idx];
     loadLevel(idx);
     renderTuneMetrics(null);
@@ -643,6 +905,9 @@
   $('autoplay').addEventListener('click', autoplay);
 
   $('analyze').addEventListener('click', analyzeCurrent);
+  $('wantHarder').addEventListener('click', function () { askSuggestions('harder'); });
+  $('wantEasier').addEventListener('click', function () { askSuggestions('easier'); });
+  $('runPlaytest').addEventListener('click', runPlaytest);
   $('applyBudget').addEventListener('click', function () {
     var a = analysisCache[idx];
     if (!a || a.minMoves == null) { note('analyze trước đã'); return; }
@@ -660,6 +925,11 @@
   $('feelPreset').addEventListener('change', function () { F.applyPreset(this.value); renderFeel(); if (state) renderer.render(state); });
   $('feelReset').addEventListener('click', function () { F.reset(); renderFeel(); if (state) renderer.render(state); });
   $('sfxOn').addEventListener('change', function () { F.set('sfxOn', this.checked ? 1 : 0); syncFeelJson(); });
+  $('useSprites').addEventListener('change', function () {
+    F.set('sprites', this.checked ? 1 : 0);
+    syncFeelJson();
+    if (state) renderer.render(state);
+  });
   $('feelLoad').addEventListener('click', function () {
     try { F.load(JSON.parse($('feelJson').value)); renderFeel(); if (state) renderer.render(state); }
     catch (e) { alert('feel JSON lỗi: ' + e.message); }
@@ -701,6 +971,7 @@
       b.classList.add('on');
       document.querySelector('.panel[data-panel="' + b.dataset.tab + '"]').classList.add('on');
       if (b.dataset.tab === 'set') renderSetTable();
+      if (b.dataset.tab === 'tune' && !lastMeasure) measureCurrent();
     });
   });
 

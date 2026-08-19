@@ -120,4 +120,4 @@
   ];
 
   global.LevelData = { palette: PALETTE, levels: LEVELS };
-})(window);
+})(typeof self !== 'undefined' ? self : this);

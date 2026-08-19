@@ -318,4 +318,4 @@
     heuristic: heuristic,
     mulberry32: mulberry32
   };
-})(window);
+})(typeof self !== 'undefined' ? self : this);

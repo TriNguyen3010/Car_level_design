@@ -14,6 +14,12 @@
     return n;
   }
 
+  function spriteFor(car) {
+    var pattern = F.get('spritePath') || 'assets/car_{color}.png';
+    var key = car.hidden ? 'hidden' : (car.color === REV ? 'wrongway' : car.color);
+    return pattern.replace('{color}', key);
+  }
+
   function Renderer(stage, opts) {
     this.stage = stage;
     this.opts = opts || {};
@@ -100,6 +106,12 @@
     el('div', 'car-sign', node);
     var q = el('div', 'car-q', node);
     q.textContent = '?';
+    var sprite = document.createElement('img');
+    sprite.className = 'car-sprite';
+    sprite.alt = '';
+    sprite.addEventListener('error', function () { sprite.dataset.missing = '1'; });
+    sprite.addEventListener('load', function () { delete sprite.dataset.missing; });
+    node.appendChild(sprite);
     this.carLayer.appendChild(node);
     this.cars[car.id] = node;
     return node;
@@ -114,6 +126,19 @@
     node.classList.toggle('is-hidden', !!car.hidden);
     node.classList.toggle('is-rev', car.color === REV && !car.hidden);
     node.classList.toggle('is-happy', !!complete);
+
+    /* The sprite is an overlay, not a replacement: if the file is missing the
+     * image just stays hidden and the CSS car shows through unchanged. */
+    var sprite = node.querySelector('.car-sprite');
+    if (sprite) {
+      var want = F.get('sprites') ? spriteFor(car) : null;
+      if (want) {
+        if (sprite.getAttribute('src') !== want) sprite.setAttribute('src', want);
+        node.classList.add('use-sprite');
+      } else {
+        node.classList.remove('use-sprite');
+      }
+    }
   };
 
   /* layout: id -> {c,r} for cars on the board. Cars not listed go to the pad. */
@@ -320,4 +345,4 @@
   };
 
   global.Renderer = Renderer;
-})(window);
+})(typeof self !== 'undefined' ? self : this);

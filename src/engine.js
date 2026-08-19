@@ -281,4 +281,4 @@
     validate: validate,
     stateToLevel: stateToLevel
   };
-})(window);
+})(typeof self !== 'undefined' ? self : this);

@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<title>Car Recolor — 1 xe → cả palette</title>
+<!-- Dev tool: the stylesheet is written with a cache-busting token because
+     Chrome keeps it in the per-tab memory cache even when the server says
+     no-store, and a stale sheet silently breaks the board layout. -->
+<script>document.write('<link rel="stylesheet" href="css/tool.css?t=' + Date.now() + '">');</script>
+<style>
+  body { overflow: auto; padding: 18px 22px 60px; }
+  .drop {
+    border: 2px dashed var(--line); border-radius: 12px; padding: 22px; text-align: center;
+    color: var(--ink-dim); cursor: pointer; margin-bottom: 8px; background: var(--panel);
+  }
+  .drop.on { border-color: var(--accent); color: var(--ink); }
+  .drop.has { border-style: solid; border-color: var(--good); }
+  .layers { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .out { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 10px; margin-top: 10px; }
+  .out figure { margin: 0; background: var(--panel); border: 1px solid var(--line); border-radius: 9px; padding: 8px; text-align: center; }
+  .out canvas { width: 100%; height: auto; image-rendering: auto; display: block; }
+  .out figcaption { color: var(--ink-dim); font-size: 11px; margin-top: 5px; }
+  .checker { background-image: linear-gradient(45deg,#22262f 25%,transparent 25%),linear-gradient(-45deg,#22262f 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#22262f 75%),linear-gradient(-45deg,transparent 75%,#22262f 75%); background-size: 14px 14px; background-position:0 0,0 7px,7px -7px,-7px 0; border-radius: 6px; }
+  h1 { font-size: 17px; margin: 0 0 4px; }
+</style>
+</head>
+<body>
+<h1>Car Recolor</h1>
+<div class="hint">Thả vào 1 xe màu trung tính (trắng/xám) rồi lấy ra cả palette. Hình dạng giống nhau tuyệt đối vì chỉ đổi màu pixel, không vẽ lại. Đọc <b>ASSETS.md</b> để biết ảnh gốc cần đúng chuẩn gì.</div>
+
+<h3>Ảnh nguồn</h3>
+<div class="layers">
+  <div>
+    <div class="drop" id="dropBase">① <b>base</b><br>thân xe, trắng/xám, có sáng tối<br><span id="nBase">chưa có</span></div>
+  </div>
+  <div>
+    <div class="drop" id="dropDetail">② <b>detail</b> (tuỳ chọn)<br>kính, đèn, lưới, viền — KHÔNG bị nhuộm<br><span id="nDetail">chưa có</span></div>
+  </div>
+  <div>
+    <div class="drop" id="dropShadow">③ <b>shadow</b> (tuỳ chọn)<br>bóng đổ dưới xe<br><span id="nShadow">chưa có</span></div>
+  </div>
+</div>
+
+<h3>Tinh chỉnh</h3>
+<div class="slider"><label>Đậm vùng tối</label><input type="range" id="sShadow" min="0" max="0.85" step="0.01" value="0.45"><output>0.45</output></div>
+<div class="slider"><label>Sáng vùng highlight</label><input type="range" id="sLight" min="0" max="0.95" step="0.01" value="0.72"><output>0.72</output></div>
+<div class="slider"><label>Điểm giữa (đâu là màu gốc)</label><input type="range" id="sMid" min="0.2" max="0.8" step="0.01" value="0.52"><output>0.52</output></div>
+<div class="slider"><label>Tăng độ rực</label><input type="range" id="sSat" min="0" max="1" step="0.01" value="0.15"><output>0.15</output></div>
+<div class="slider"><label>Kích thước xuất (px)</label><input type="range" id="sSize" min="64" max="512" step="32" value="256"><output>256</output></div>
+
+<div class="row" style="margin-top:10px">
+  <button class="primary" id="dlAll">Download từng file PNG</button>
+  <button id="dlSheet">Download spritesheet + atlas JSON</button>
+  <span class="hint" id="status" style="margin:0"></span>
+</div>
+
+<h3>Kết quả</h3>
+<div class="out" id="out"></div>
+
+<script src="src/levels.js"></script>
+<script>
+(function () {
+  'use strict';
+  var PALETTE = self.LevelData.palette;
+  var imgs = { base: null, detail: null, shadow: null };
+  var $ = function (id) { return document.getElementById(id); };
+
+  function wireDrop(dropId, key, labelId) {
+    var d = $(dropId);
+    d.addEventListener('click', function () {
+      var inp = document.createElement('input');
+      inp.type = 'file'; inp.accept = 'image/*';
+      inp.onchange = function () { if (inp.files[0]) load(inp.files[0], key, labelId, d); };
+      inp.click();
+    });
+    ['dragenter', 'dragover'].forEach(function (e) {
+      d.addEventListener(e, function (ev) { ev.preventDefault(); d.classList.add('on'); });
+    });
+    ['dragleave', 'drop'].forEach(function (e) {
+      d.addEventListener(e, function (ev) { ev.preventDefault(); d.classList.remove('on'); });
+    });
+    d.addEventListener('drop', function (ev) {
+      var f = ev.dataTransfer.files[0];
+      if (f) load(f, key, labelId, d);
+    });
+  }
+
+  function load(file, key, labelId, node) {
+    var img = new Image();
+    img.onload = function () {
+      imgs[key] = img;
+      $(labelId).textContent = file.name + ' — ' + img.width + '×' + img.height;
+      node.classList.add('has');
+      render();
+    };
+    img.src = URL.createObjectURL(file);
+  }
+
+  wireDrop('dropBase', 'base', 'nBase');
+  wireDrop('dropDetail', 'detail', 'nDetail');
+  wireDrop('dropShadow', 'shadow', 'nShadow');
+
+  function hex2rgb(h) {
+    h = h.replace('#', '');
+    return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
+  }
+
+  /* Map the source's luminance onto a ramp built from the target colour:
+   * dark end = target darkened, midpoint = target itself, bright end = target
+   * washed toward white. That keeps every bit of the original shading and AO,
+   * and unlike a hue rotate it works for pale targets like beige and white. */
+  function recolor(src, rgb, cfg) {
+    var d = src.data, dark = cfg.shadow, light = cfg.light, mid = cfg.mid, sat = cfg.sat;
+    var tr = rgb[0], tg = rgb[1], tb = rgb[2];
+    var avg = (tr + tg + tb) / 3;
+    tr = Math.max(0, Math.min(255, avg + (tr - avg) * (1 + sat)));
+    tg = Math.max(0, Math.min(255, avg + (tg - avg) * (1 + sat)));
+    tb = Math.max(0, Math.min(255, avg + (tb - avg) * (1 + sat)));
+    for (var i = 0; i < d.length; i += 4) {
+      if (d[i + 3] === 0) continue;
+      var l = (0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]) / 255;
+      var r, g, b, t;
+      if (l <= mid) {
+        t = mid > 0 ? l / mid : 0;
+        r = tr * (1 - dark) + (tr - tr * (1 - dark)) * t;
+        g = tg * (1 - dark) + (tg - tg * (1 - dark)) * t;
+        b = tb * (1 - dark) + (tb - tb * (1 - dark)) * t;
+      } else {
+        t = (l - mid) / (1 - mid);
+        r = tr + (255 - tr) * light * t;
+        g = tg + (255 - tg) * light * t;
+        b = tb + (255 - tb) * light * t;
+      }
+      d[i] = r; d[i + 1] = g; d[i + 2] = b;
+    }
+    return src;
+  }
+
+  function cfg() {
+    return {
+      shadow: +$('sShadow').value, light: +$('sLight').value,
+      mid: +$('sMid').value, sat: +$('sSat').value, size: +$('sSize').value
+    };
+  }
+
+  function drawOne(name, c) {
+    var size = c.size;
+    var cv = document.createElement('canvas');
+    cv.width = size; cv.height = size;
+    var ctx = cv.getContext('2d');
+    if (imgs.shadow) ctx.drawImage(imgs.shadow, 0, 0, size, size);
+
+    var tmp = document.createElement('canvas');
+    tmp.width = size; tmp.height = size;
+    var tctx = tmp.getContext('2d');
+    tctx.drawImage(imgs.base, 0, 0, size, size);
+    var data = tctx.getImageData(0, 0, size, size);
+    tctx.putImageData(recolor(data, hex2rgb(PALETTE[name]), c), 0, 0);
+    ctx.drawImage(tmp, 0, 0);
+
+    if (imgs.detail) ctx.drawImage(imgs.detail, 0, 0, size, size);
+    return cv;
+  }
+
+  var made = [];
+  function render() {
+    var box = $('out');
+    box.innerHTML = '';
+    made = [];
+    if (!imgs.base) { box.innerHTML = '<div class="hint">chưa có ảnh base</div>'; return; }
+    var c = cfg();
+    Object.keys(PALETTE).forEach(function (name) {
+      var cv = drawOne(name, c);
+      made.push({ name: name, canvas: cv });
+      var fig = document.createElement('figure');
+      fig.className = 'checker';
+      fig.appendChild(cv);
+      var cap = document.createElement('figcaption');
+      cap.textContent = name;
+      fig.appendChild(cap);
+      box.appendChild(fig);
+    });
+    $('status').textContent = made.length + ' màu @ ' + c.size + 'px';
+  }
+
+  Array.prototype.forEach.call(document.querySelectorAll('input[type=range]'), function (inp) {
+    var out = inp.parentNode.querySelector('output');
+    inp.addEventListener('input', function () { out.textContent = inp.value; render(); });
+  });
+
+  function dl(href, filename) {
+    var a = document.createElement('a');
+    a.href = href; a.download = filename; a.click();
+  }
+
+  $('dlAll').addEventListener('click', function () {
+    made.forEach(function (m, i) {
+      setTimeout(function () { dl(m.canvas.toDataURL('image/png'), 'car_' + m.name + '.png'); }, i * 220);
+    });
+  });
+
+  $('dlSheet').addEventListener('click', function () {
+    if (!made.length) return;
+    var c = cfg(), cols = 6, rows = Math.ceil(made.length / cols);
+    var sheet = document.createElement('canvas');
+    sheet.width = cols * c.size; sheet.height = rows * c.size;
+    var ctx = sheet.getContext('2d');
+    var atlas = { size: c.size, frames: {} };
+    made.forEach(function (m, i) {
+      var x = (i % cols) * c.size, y = Math.floor(i / cols) * c.size;
+      ctx.drawImage(m.canvas, x, y);
+      atlas.frames[m.name] = { x: x, y: y, w: c.size, h: c.size };
+    });
+    dl(sheet.toDataURL('image/png'), 'cars_sheet.png');
+    setTimeout(function () {
+      dl('data:application/json,' + encodeURIComponent(JSON.stringify(atlas, null, 2)), 'cars_atlas.json');
+    }, 300);
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
