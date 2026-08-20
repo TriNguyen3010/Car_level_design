@@ -1,6 +1,24 @@
 # Chuẩn bị asset
 
-## Cách nên làm: 1 xe trung tính, đổi màu bằng code
+## Đang dùng: sheet 9 kiểu dáng
+
+`Gemini_Generated_Image_giezi1giezi1giez.png` — sheet 3×3, 9 kiểu xe trắng. Đã cắt sẵn:
+
+```bash
+python3 tools/slice_sheet.py Gemini_Generated_Image_giezi1giezi1giez.png --size 512
+```
+
+Ra `assets/shapes/shape1..9_{base,detail}.png`. Script làm 3 việc mà pipeline nhuộm màu phụ thuộc vào:
+
+1. **Xoá nền** bằng flood fill từ viền ô vào trong — nên kính chắn gió (màu gần giống nền nhưng bị thân xe bao kín) không bị ăn mất.
+2. **Tách thân khỏi chi tiết.** Phần tối (kính, lưới, lốp) thành lớp detail **không bị nhuộm**. Không tách thì xe hồng sẽ có kính hồng.
+3. **Kéo giãn dải sáng tối của thân.** Xe gốc nằm trong dải sáng hẹp, dải màu cần đủ 0–1 mới ra được khối chứ không bị bệt.
+
+Kiểu dáng là **thuần trang trí** — engine không hề biết đến nó. Hai xe cùng màu là cùng một loại dù khác kiểu dáng. Số kiểu dáng dùng đồng thời chỉnh ở tab Feel (1–9) để so xem nhiều kiểu có làm khó đọc màu không.
+
+Muốn thêm kiểu dáng: gen thêm sheet với cùng prompt, chạy lại `slice_sheet.py`, nâng `MAX_SHAPES` trong `src/sprites.js`.
+
+## Cách cũ: 1 xe trung tính, đổi màu bằng code
 
 Đưa em **một** chiếc xe màu trắng/xám, em sinh ra cả 18 màu. Mở `recolor.html`, thả file vào, kéo 4 slider, download.
 
@@ -83,6 +101,8 @@ Tất cả PNG-24 có alpha. Đặt hết vào thư mục `assets/`.
 
 ## Xem thử ngay trong tool
 
-Bỏ file vào `assets/` theo đúng tên `car_<màu>.png` (ví dụ `car_magenta.png`), rồi bật **dùng sprite** ở tab Feel. Xe CSS hiện tại nằm dưới làm lớp dự phòng — file nào thiếu thì tự động rơi về xe vẽ bằng CSS, không vỡ layout.
+Sprite được nhuộm **lúc chạy** trên canvas rồi cache, nên không cần sinh sẵn 9 kiểu × 18 màu = 162 file. Level chỉ trả giá cho đúng màu và kiểu nó dùng.
 
-`recolor.html` đặt tên file xuất ra đúng chuẩn này sẵn.
+Bật **dùng sprite xe** ở tab Feel (mặc định đã bật). Xe vẽ bằng CSS nằm dưới làm lớp dự phòng — thiếu file thì tự rơi về, không vỡ layout.
+
+Muốn xuất file rời cho bản game thật thì dùng `tools/recolor.py` (làm việc với `assets/car_base.png` một kiểu dáng), hoặc `recolor.html` để xuất spritesheet + atlas.

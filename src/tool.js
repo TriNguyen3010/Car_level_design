@@ -40,6 +40,17 @@
   });
   stage.appendChild(resultNode);
 
+  /* Body shape is decoration only — the engine never sees it. Seeded by level
+   * so a restart shows the same traffic, and always drawn from the full set of
+   * nine so changing the "how many shapes" slider does not reshuffle the board. */
+  function assignShapes(s, seed) {
+    var rnd = S.mulberry32(seed), MAX = (global.Sprites && global.Sprites.MAX_SHAPES) || 9;
+    for (var c = 0; c < s.cols; c++) {
+      for (var r = 0; r < s.rows; r++) s.grid[c][r].shape = (rnd() * MAX) | 0;
+    }
+    s.pad.shape = (rnd() * MAX) | 0;
+  }
+
   function loadLevel(i) {
     if (i < 0 || i >= levels.length) return;
     idx = i;
@@ -55,6 +66,7 @@
       return;
     }
     state = E.createState(level());
+    assignShapes(state, (level().id != null ? level().id : idx + 1) * 7919 + level().cols);
     history = [];
     stage.className = 'stage theme-' + (level().theme || 'city');
     stage.appendChild(resultNode);
@@ -89,6 +101,7 @@
     stopAutoplay();
     if (!history.length) return;
     state = history.pop();
+    assignShapes(state, (level().id != null ? level().id : idx + 1) * 7919 + level().cols);
     stage.classList.remove('won', 'lost');
     renderer.render(state);
     hideResult();
@@ -171,6 +184,27 @@
     }
     $('prevLv').disabled = idx === 0;
     $('nextLv').disabled = idx === levels.length - 1;
+  }
+
+  /* ---------------- modes ----------------
+   * Test is what the tool opens in: play the level and read its numbers, with
+   * nothing on screen that can change it. Design adds the authoring surface.
+   * Keeping them apart means a playtest session can never be a level edit by
+   * accident, which is the only way the numbers stay trustworthy. */
+
+  var DESIGN_TABS = { tune: 1, edit: 1, feel: 1 };
+  var mode = 'test';
+
+  function setMode(m) {
+    mode = m;
+    document.body.dataset.mode = m;
+    var btn = $('modeToggle');
+    btn.textContent = m === 'test' ? '⚙ Level Design' : '▶ Test';
+    btn.title = m === 'test'
+      ? 'Vào chế độ chỉnh sửa: sửa lưới, cân độ khó, tinh chỉnh game feel'
+      : 'Về chế độ chơi thử: chỉ chơi và đọc chỉ số, không sửa được gì';
+    var active = document.querySelector('#tabs button.on');
+    if (m === 'test' && active && DESIGN_TABS[active.dataset.tab]) switchTab('play');
   }
 
   /* ---------------- result screen ---------------- */
@@ -911,6 +945,8 @@
       var o = el('option', null, sel, name);
       o.value = name;
     });
+    $('useSprites').checked = !!F.get('sprites');
+    $('sfxOn').checked = !!F.get('sfxOn');
     syncFeelJson();
   }
 
@@ -1096,6 +1132,21 @@
   $('autoplay').addEventListener('click', autoplay);
 
   $('analyze').addEventListener('click', analyzeCurrent);
+  $('analyzePlay').addEventListener('click', function () {
+    var b = $('analyzePlay');
+    b.disabled = true; b.textContent = 'đang đo…';
+    $('analyzePlayNote').textContent = '';
+    setTimeout(function () {
+      analyzeCurrent();
+      measureCurrent();
+      b.disabled = false; b.textContent = 'Đo lại';
+      var a = analysisCache[idx];
+      $('analyzePlayNote').textContent = a && a.minMoves != null
+        ? 'lời giải ' + a.minMoves + (a.exact ? '' : '~') + ' move · budget ' + level().moves
+        : '';
+    }, 20);
+  });
+  $('modeToggle').addEventListener('click', function () { setMode(mode === 'test' ? 'design' : 'test'); });
   $('wantHarder').addEventListener('click', function () { askSuggestions('harder'); });
   $('wantEasier').addEventListener('click', function () { askSuggestions('easier'); });
   $('runPlaytest').addEventListener('click', runPlaytest);
@@ -1191,7 +1242,16 @@
   renderBrushes();
   renderFeel();
   renderBanner();
+  setMode('test');
   loadLevel(0);
+
+  /* Sprites arrive asynchronously; redraw once they do. */
+  if (global.Sprites) {
+    global.Sprites.load().then(function (n) {
+      if (n && state) renderer.render(state);
+      if (n) note(n + ' kiểu dáng xe đã nạp');
+    });
+  }
   renderSetTable();
   global.CarTool = {
     levels: function () { return levels; },

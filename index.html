@@ -26,6 +26,7 @@
     <button id="autoplay">Autoplay</button>
     <span class="grow"></span>
     <span class="badge" id="statusBadge">playing</span>
+    <button id="modeToggle" class="primary" title="Đổi giữa chơi thử và chỉnh sửa"></button>
   </div>
 
   <div id="tuneBanner"></div>
@@ -40,15 +41,19 @@
     <div id="side">
       <div id="tabs">
         <button data-tab="play" class="on">Play</button>
-        <button data-tab="tune">Tune</button>
-        <button data-tab="edit">Edit</button>
+        <button class="design-only" data-tab="tune">Tune</button>
+        <button class="design-only" data-tab="edit">Edit</button>
         <button data-tab="playtest">Playtest</button>
-        <button data-tab="feel">Feel</button>
+        <button class="design-only" data-tab="feel">Feel</button>
         <button data-tab="set">Level Set</button>
       </div>
       <div id="panels">
 
         <div class="panel on" data-panel="play">
+          <div class="row">
+            <button class="primary" id="analyzePlay">Đo level này</button>
+            <span class="hint" id="analyzePlayNote" style="margin:0">chạy solver + playtest nhanh để xem chỉ số</span>
+          </div>
           <h3>Level hiện tại</h3>
           <div class="metrics" id="playMetrics"></div>
           <h3>Đọc số thế nào</h3>
@@ -152,7 +157,7 @@
             <select id="feelPreset"></select>
             <button id="feelReset">Reset</button>
             <label style="min-width:0"><input type="checkbox" id="sfxOn" checked> SFX</label>
-            <label style="min-width:0"><input type="checkbox" id="useSprites"> dùng sprite trong assets/</label>
+            <label style="min-width:0"><input type="checkbox" id="useSprites"> dùng sprite xe (assets/shapes)</label>
           </div>
           <div id="feelSliders"></div>
           <h3>Feel JSON</h3>
@@ -163,20 +168,22 @@
         <div class="panel" data-panel="set">
           <div class="row">
             <button class="primary" id="runAll">Analyze cả set</button>
-            <button id="addLevel">+ Level</button>
-            <button id="dupLevel">Duplicate</button>
-            <button id="delLevel">Delete</button>
+            <span class="design-only"><button id="addLevel">+ Level</button></span>
+            <span class="design-only"><button id="dupLevel">Duplicate</button></span>
+            <span class="design-only"><button id="delLevel">Delete</button></span>
           </div>
           <div id="setTableWrap"><table class="grid" id="setTable"></table></div>
           <h3>Curve</h3>
           <div id="curve"></div>
-          <h3>Export</h3>
-          <div class="row">
-            <button class="primary" id="exportBtn">Xuất JSON set</button>
-            <button id="downloadBtn">Download .json</button>
-            <button id="importBtn">Import từ textarea</button>
+          <div class="design-only">
+            <h3>Export</h3>
+            <div class="row">
+              <button class="primary" id="exportBtn">Xuất JSON set</button>
+              <button id="downloadBtn">Download .json</button>
+              <button id="importBtn">Import từ textarea</button>
+            </div>
+            <textarea id="exportJson" rows="14" spellcheck="false"></textarea>
           </div>
-          <textarea id="exportJson" rows="14" spellcheck="false"></textarea>
         </div>
 
       </div>
@@ -185,6 +192,7 @@
 </div>
 
 <script src="src/help.js"></script>
+<script src="src/sprites.js"></script>
 <script src="src/engine.js"></script>
 <script src="src/levels.js"></script>
 <script src="src/solver.js"></script>

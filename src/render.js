@@ -14,10 +14,15 @@
     return n;
   }
 
-  function spriteFor(car) {
+  function spriteFor(car, palette) {
+    var kind = car.hidden ? 'hidden' : car.color;
+    var Sp = global.Sprites;
+    if (Sp && Sp.count()) {
+      var limit = Math.max(1, Math.min(Sp.count(), F.get('shapeCount') || 1));
+      return Sp.get(kind, (car.shape || 0) % limit, palette);
+    }
     var pattern = F.get('spritePath') || 'assets/car_{color}.png';
-    var key = car.hidden ? 'hidden' : (car.color === REV ? 'wrongway' : car.color);
-    return pattern.replace('{color}', key);
+    return pattern.replace('{color}', car.hidden ? 'hidden' : (car.color === REV ? 'wrongway' : car.color));
   }
 
   function Renderer(stage, opts) {
@@ -131,7 +136,7 @@
      * image just stays hidden and the CSS car shows through unchanged. */
     var sprite = node.querySelector('.car-sprite');
     if (sprite) {
-      var want = F.get('sprites') ? spriteFor(car) : null;
+      var want = F.get('sprites') ? spriteFor(car, this.palette) : null;
       if (want) {
         if (sprite.getAttribute('src') !== want) sprite.setAttribute('src', want);
         node.classList.add('use-sprite');

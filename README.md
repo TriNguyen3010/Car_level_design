@@ -84,6 +84,26 @@ Mọi chỉ số đều có dấu <b>?</b> bấm được, mở ra giải thích
 
 `choice` là dial độ khó chính, không phải grid size. Cách tăng nó: **đặt số màu ít hơn số cột** — khi 2 cột cùng màu thì player phải chọn cột nào để nhả xe.
 
+## Hai chế độ
+
+Tool mở ra ở **Test**. Bấm **⚙ Level Design** ở góc phải trên để vào chế độ chỉnh sửa, bấm **▶ Test** để quay lại.
+
+| | Test | Level Design |
+|---|---|---|
+| Tab | Play · Playtest · Level Set | thêm Tune · Edit · Feel |
+| Level Set | chỉ xem bảng + curve | thêm +Level / Duplicate / Delete / Export / Import |
+| Sửa được level | không | có |
+
+Tách ra để một buổi playtest không bao giờ vô tình thành một buổi sửa level — đó là điều kiện để các con số còn đáng tin. Ở chế độ Design có vạch vàng trên thanh menu để a luôn biết mình đang ở đâu.
+
+Chế độ Test vẫn có nút **Đo level này** ở tab Play và toàn bộ report Playtest, nên vẫn phân tích được đầy đủ.
+
+## Kiểu dáng xe
+
+9 kiểu thân xe khác nhau, cùng một màu vẫn là cùng một loại — đúng như xe ngoài đường. Mục đích: 36 ô cùng silhouette trông như giấy dán tường, đổi kiểu dáng phá được cái đó mà không thêm một luật chơi nào.
+
+Kiểu dáng gán theo seed của level nên restart vẫn ra đúng dàn xe cũ, và luôn bốc từ đủ 9 kiểu nên kéo slider "số kiểu dáng" không xáo lại bàn. Sprite nhuộm lúc chạy trên canvas rồi cache. Xem `ASSETS.md`.
+
 ## Test level vừa chỉnh
 
 Bấm **Áp dụng** hoặc **▶ Chơi thử** trên thẻ gợi ý. Level được thay, bàn reset, và một banner hiện ra ở đầu màn hình:

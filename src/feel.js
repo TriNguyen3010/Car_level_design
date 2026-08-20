@@ -33,12 +33,13 @@
     inputLock: 180,
     padBob: 3,
     padBobDuration: 1600,
-    carScale: 0.88,
-    cellGap: 0.06,
+    carScale: 1,
+    cellGap: 0.02,
     shadowStrength: 0.45,
     sfxOn: 1,
     sfxVolume: 0.25,
-    sprites: 0,
+    sprites: 1,
+    shapeCount: 6,
     spritePath: 'assets/car_{color}.png'
   };
 
@@ -63,7 +64,8 @@
     ['carScale',         'Car scale trong ô',            0.6,   1, 0.01, 'x'],
     ['cellGap',          'Cell gap',                       0, 0.2, 0.005, 'x'],
     ['shadowStrength',   'Shadow',                         0,   1, 0.02, ''],
-    ['sfxVolume',        'SFX volume',                     0,   1, 0.02, '']
+    ['sfxVolume',        'SFX volume',                     0,   1, 0.02, ''],
+    ['shapeCount',       'Số kiểu dáng xe dùng',           1,   9,  1, ' kiểu']
   ];
 
   var PRESETS = {
