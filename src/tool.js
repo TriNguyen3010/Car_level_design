@@ -20,6 +20,35 @@
 
   function setSpec() { return SETS ? SETS[currentSet] : { name: '', breathers: [], rhythmOn: 'winAvg' }; }
 
+  /* The picker leads with the difficulty word and colours by difficulty, because
+   * "Nhịp" tells a reader nothing about how hard the campaign is. The poetic name
+   * and the intent live in the tooltip and in the Nhật ký panel. The tier range
+   * under each label says how hard in the tool's own vocabulary. */
+  var SET_WORD = { 'default': 'Gốc', easy: 'Dễ', medium: 'Trung bình', hard: 'Khó' };
+
+  /* Start arrow peak, not a min-max range: the ranges overlap at the low end
+   * ("bậc 1–7" vs "bậc 2–10") which muddles which campaign is harder. The peak
+   * on the right orders them at a glance — 4, 7, 10. */
+  function tierRange(key) {
+    var ts = SETS[key].levels.map(function (L) { return L.tier; }).filter(Boolean);
+    if (!ts.length) return 'budget rộng';
+    return 'bậc ' + ts[0] + '→' + Math.max.apply(null, ts);
+  }
+
+  function renderSetPick() {
+    if (!SETS) return;
+    var box = clear($('setPick'));
+    SET_ORDER.forEach(function (k) {
+      var b = el('button', currentSet === k ? 'on' : '', box);
+      b.dataset.set = k;
+      el('b', null, b, SET_WORD[k] || SETS[k].label);
+      el('span', null, b, tierRange(k));
+      b.title = SETS[k].name + ' — ' + (SETS[k].intent || '').replace(/<[^>]+>/g, '') +
+                '\n\nĐổi bộ là chơi lại từ level 1.';
+      b.addEventListener('click', function () { switchSet(k); });
+    });
+  }
+
   /* Switching campaign restarts from level 1 — the sets are different curves,
    * so carrying a level index across them would land the player mid-ramp. */
   function switchSet(key) {
@@ -31,7 +60,7 @@
     levelHistory.length = 0;
     tierOf = {}; lockedTier = {};
     idx = 0;
-    $('setPick').value = key;
+    renderSetPick();
     renderBanner();
     loadLevel(0);
     renderSetTable();
@@ -1972,8 +2001,8 @@
     if (data.sets && SETS) {
       Object.keys(data.sets).forEach(function (k) { SETS[k] = data.sets[k]; });
       currentSet = data.currentSet && SETS[data.currentSet] ? data.currentSet : SET_ORDER[0];
-      $('setPick').value = currentSet;
       levels = SETS[currentSet].levels;
+      renderSetPick();
     } else {
       levels = data.levels;
     }
@@ -2011,15 +2040,7 @@
   Array.prototype.forEach.call(document.querySelectorAll('#modeSwitch button'), function (b) {
     b.addEventListener('click', function () { setMode(b.dataset.mode); });
   });
-  if (SETS) {
-    var pick = $('setPick');
-    SET_ORDER.forEach(function (k) {
-      var o = el('option', null, pick, SETS[k].name + ' · ' + SETS[k].label);
-      o.value = k;
-    });
-    pick.value = currentSet;
-    pick.addEventListener('change', function () { switchSet(this.value); });
-  }
+  renderSetPick();
   $('journalClear').addEventListener('click', function () {
     global.Modal.open({
       title: 'Xoá nhật ký?',

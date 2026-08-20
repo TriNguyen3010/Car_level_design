@@ -13,8 +13,6 @@
 <body>
 <div id="app">
   <div id="top">
-    <select id="setPick" title="Bộ cấp độ — đổi bộ là về level 1"></select>
-    <span class="sep"></span>
     <button id="prevLv" title="Level trước">◀</button>
     <span class="badge">Level <b id="lvName">1</b> <span id="lvCount" style="color:var(--ink-dim)"></span></span>
     <button id="nextLv" title="Level sau">▶</button>
@@ -32,6 +30,8 @@
     <span class="badge" id="statusBadge">playing</span>
     <button id="helpGuide" title="Hướng dẫn 2 chế độ">Hướng dẫn</button>
     <span class="badge" id="buildStamp" title="thời điểm src/tool.js được sửa lần cuối — dùng để biết browser đã nạp bản mới chưa">build …</span>
+    <span class="sets" id="setPick"></span>
+    <span class="sep"></span>
     <span class="modes" id="modeSwitch">
       <button data-mode="test" title="Chỉ chơi và đọc chỉ số, không sửa được gì">▶ Test</button>
       <button data-mode="playtune" title="Chơi rồi nâng/hạ bậc ngay tại bàn, ghi nhật ký">🎮 Chơi &amp; cân</button>

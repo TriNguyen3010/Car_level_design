@@ -156,7 +156,9 @@ Mọi chỉ số đều có dấu <b>?</b> bấm được, mở ra giải thích
 
 ## Bốn bộ cấp độ
 
-Chọn ở góc trái trên. **Đổi bộ là về level 1** — mỗi bộ là một curve khác, giữ số level cũ sẽ rơi vào giữa ramp của bộ mới.
+Chọn bằng nhóm nút cùng hàng với 3 chế độ: `Gốc` · `Dễ` · `Trung bình` · `Khó`, mỗi nút kèm dải bậc `1→4` / `1→7` / `2→10` và tô màu theo độ khó. **Đổi bộ là về level 1** — mỗi bộ là một curve khác, giữ số level cũ sẽ rơi vào giữa ramp của bộ mới.
+
+Nút dẫn bằng **từ độ khó** chứ không phải tên bộ, vì "Nhịp" không nói gì về việc nó khó cỡ nào. Tên bộ và ý đồ nằm ở tooltip và ở panel tab Nhật ký. Dạng `bắt đầu→đỉnh` chứ không phải min–max, vì min–max chồng nhau ở đầu dưới (`1–7` vs `2–10`) làm khó so; số đỉnh bên phải xếp thứ tự ngay: 4, 7, 10.
 
 Một bộ là một **cách tiếp cận**, không phải một độ dốc. Mỗi bộ có ý đồ riêng và **cố ý không tuyến tính**, vì chỗ nghỉ sau một cơ chế mới là thứ làm player cảm thấy *mình làm được* thay vì *mình vừa may*.
 
