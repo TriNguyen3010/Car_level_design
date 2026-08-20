@@ -163,21 +163,20 @@
 
     'template': {
       title: 'Template độ khó',
-      body: 'Bốn bậc, <b>Độ 1 dễ nhất đến Độ 4 khó nhất</b>. Mỗi bậc là một mục tiêu viết bằng đúng các knob đang có — số màu trên số cột, mật độ xe lạ, tỉ lệ xe ẩn, slack — cộng dải số mà level phải rơi vào mới được tính là bậc đó. Nên bậc nào cũng đọc được, phản biện được, sửa được (mở "Sửa template (JSON)").',
-      example:
-        'Mỗi bậc tì vào MỘT trục khác nhau. Bốn bậc cùng khó theo một kiểu\n' +
-        'thì chỉ là một level lặp lại bốn lần.\n\n' +
-        '  Độ 1  Tập lái        dạy luật        win TB  95-100%\n' +
-        '  Độ 2  Giờ cao điểm   budget          win TB   80-95%\n' +
-        '  Độ 3  Bãi chật       định tuyến      win TB   62-80%   độ sâu 22+\n' +
-        '  Độ 4  Giờ đêm        thiếu thông tin win TB   35-62%   ẩn 18-30%\n\n' +
-        'Dải win không chồng nhau, nên số 1-4 là thứ tự độ khó thật.',
+      body: 'Thang <b>10 bậc</b>, bậc 1 dễ nhất đến bậc 10 khó nhất. Mỗi bậc là một mục tiêu viết bằng đúng các knob đang có — số màu trên số cột, mật độ xe lạ, tỉ lệ xe ẩn, slack — cộng dải số mà level phải rơi vào mới được tính là bậc đó.',
       list: [
-        '<b>Áp dụng cho</b> — chọn "chỉ level đang chọn" hoặc "nhiều level" rồi nhập khoảng. Cả khoảng là <b>một</b> lần Hoàn tác.',
-        '<b>Áp dụng</b> — sinh cho tới khi đạt tiêu chí: bàn nhỏ hơn mức tối thiểu thì tự mở rộng, vẫn lệch thì tìm rộng hơn, vẫn lệch thì thêm 1 hàng.',
-        '<b>Chỉ đặt lại budget</b> — giữ nguyên lưới đã vẽ, chỉ dò budget trong dải slack của bậc.'
+        '<b>Ảnh thu nhỏ</b> là bàn mẫu thật ở bậc đó. Xe <b>viền trắng</b> là xe lạ — không thuộc cột màu của nó. Ô <b>tối có viền tím</b> là xe ẩn. Chú thích dưới ảnh cho biết bao nhiêu màu trên bao nhiêu cột.',
+        '<b>Câu trong ngoặc kép</b> là cảm giác chơi, không phải cơ chế. Phần cơ chế nằm trong mục "Vì sao".',
+        '<b>Ba thanh</b> là tỉ lệ thắng của player giỏi / trung bình / ẩu, lấy từ trung vị đo được.',
+        '<b>x/7 tiêu chí</b> là level đang mở đạt bao nhiêu dải của bậc đó.'
       ],
-      note: 'Để thang đúng thứ tự phải siết slack ở hai bậc trên. Đo được: Độ 3 ở slack 1.60 ra win TB 83–98% — <b>ngang hệt Độ 2</b>, tức sâu hơn mà không khó hơn, nên slack phải về 1.42. Độ 4 ở slack 1.45 ra 70–98%, không khó hơn Độ 3, nên phải về 1.28. Bài học: <b>gộp màu và siết budget trừ nhau, không cộng</b> — ít màu hơn số cột cho player nhiều chỗ nhả xe đúng hơn nên tự động bớt move phí.'
+      example:
+        'Nhìn ảnh thu nhỏ là biết bậc đó khó theo kiểu gì:\n\n' +
+        '  bậc 1   5 màu / 5 cột   mỗi cột một màu riêng, 0-2 xe lạ\n' +
+        '  bậc 5   4 màu / 5 cột   bắt đầu có cột trùng màu\n' +
+        '  bậc 7   3 màu / 5 cột   ba cột cùng màu, 2-3 xe lạ mỗi cột\n' +
+        '  bậc 10  2 màu / 5 cột   cộng thêm 8 ô bị ẩn',
+      note: 'Mọi con số <b>đo ra</b>, không đoán: sinh 3 bàn ở mỗi kích thước trong 4 kích thước cho từng bậc rồi playtest. Win trung vị của player trung bình xuống đơn điệu 100 · 99 · 97 · 93 · 88 · 83 · 79 · 72 · 58 · 52. Hai điều curve đó nói ra: bậc 1–4 gần như không làm player trung bình thua nhưng cắt một nửa player ẩu; và <b>gộp màu làm level sâu hơn nhưng hơi dễ hơn</b>, nên slack phải siết xuyên qua khúc chuyển ở bậc 6, không thì thang đứng lại.'
     },
 
     'no-dead-end': {

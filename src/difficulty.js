@@ -69,6 +69,22 @@
       why: 'Xe ẩn lộ ngay khi cột bị tap nên một mình nó yếu — chỉ chặn được lượt lập kế hoạch đầu của mỗi cột. Nó chỉ thành trục thật khi budget đã rất chặt: lúc đó nước tap để dò màu cũng là nước tiêu budget. Đừng quá 30% bàn, quá ngưỡng đó thành đoán chứ không phải chơi.' }
   ];
 
+  /* One line per step, in the language of playing rather than of knobs.
+   * "budget rộng gấp 2-3 lần lời giải" tells you nothing unless you already
+   * hold the mechanics in your head; "bấm sai 3 lần là thua" you can feel. */
+  var FEEL = [
+    'Không thể thua. Nhìn màu, tap đúng cột, xong.',
+    'Vẫn khó thua, nhưng bấm bừa thì bắt đầu hết move.',
+    'Bấm sai 5–6 lần mới thua. Vừa đủ để player học rằng move có giá.',
+    'Bấm sai 3–4 lần là thua. Người chơi cẩn thận vẫn qua dễ.',
+    'Bấm sai 2–3 lần là thua. Đây là chỗ Undo bắt đầu đáng tiền.',
+    'Có cột trùng màu — lần đầu player phải chọn, không còn đi theo dây.',
+    'Chọn cột sai tốn 3–4 move dọn, mà budget chỉ dư hơn 25%.',
+    'Nhiều cột có 2–3 xe lạ, auto-sort im lặng. Phải tự tính thứ tự moi ra.',
+    'Gần 1/5 bàn không thấy màu. Tap để dò màu cũng là tap tiêu move.',
+    'Một phần tư bàn bị ẩn, budget chỉ dư 10%. Sai một nước là xong.'
+  ];
+
   var WHEN = [
     'Level 1–4, dạy luật.', 'Level 5–8.',
     'Level 9–16.', 'Level 17–24.', 'Level 25–34.',
@@ -90,8 +106,10 @@
         group: g.name,
         name: 'Bậc ' + tier + ' · ' + g.name,
         axis: g.axis,
+        feel: FEEL[i],
         focus: g.focus,
         why: g.why,
+        medians: { winCareful: wc, winAvg: wa, winSloppy: ws },
         when: WHEN[i],
         minCols: row[7], minRows: row[8],
         build: { colorRatio: cr, strayDensity: sd, hiddenRatio: hid, slack: slack },
@@ -357,6 +375,65 @@
     return out;
   }
 
+  var sampleCache = {};
+
+  /* A representative board for the step, with each cell marked as on-target,
+   * stray, or hidden — so a thumbnail can show at a glance whether every colour
+   * owns one column and how crowded the strays are. */
+  /* Palette order is authoring order, which puts magenta/pink/purple/violet
+   * next to each other — indistinguishable in a 13px thumbnail. Samples pick
+   * well-separated hues instead so the picture reads. */
+  var SAMPLE_HUES = ['yellow', 'blue', 'lime', 'magenta', 'cyan', 'orange', 'mint', 'beige', 'navy'];
+
+  function sampleColors(palette, n) {
+    var out = SAMPLE_HUES.filter(function (c) { return palette[c]; }).slice(0, n);
+    Object.keys(palette).forEach(function (c) {
+      if (out.length < n && out.indexOf(c) < 0) out.push(c);
+    });
+    return out;
+  }
+
+  function sample(key, palette, cols, rows) {
+    var tpl = TEMPLATES[key];
+    if (!tpl) return null;
+    cols = Math.max(cols || 5, tpl.minCols || 2);
+    rows = Math.max(rows || 5, tpl.minRows || 2);
+    var ck = key + ':' + cols + 'x' + rows;
+    if (sampleCache[ck]) return sampleCache[ck];
+
+    var cells = cols * rows, b = tpl.build;
+    var nColors = Math.max(1, Math.min(cols, Math.round(cols * b.colorRatio)));
+    var names = sampleColors(palette, nColors);
+    var lv = G.generate({
+      cols: cols, rows: rows, colors: names,
+      strays: Math.max(1, Math.round(cells * b.strayDensity)),
+      hidden: Math.round(cells * b.hiddenRatio),
+      revInGrid: true, seed: 12
+    });
+    lv.id = 0; lv.moves = 99;
+
+    var target = T.assignTargets(lv);
+    var grid = [];
+    for (var c = 0; c < cols; c++) {
+      grid[c] = [];
+      for (var r = 0; r < rows; r++) {
+        var spec = String(lv.grid[c][r]);
+        var hidden = spec.charAt(0) === '?';
+        var color = hidden ? spec.slice(1) : spec;
+        grid[c][r] = {
+          color: color, hidden: hidden,
+          rev: color === E.REV,
+          stray: color !== target[c] && color !== E.REV
+        };
+      }
+    }
+    var out = { level: lv, cols: cols, rows: rows, grid: grid, target: target, colors: nColors };
+    var ab = G.autoBudget(lv, b.slack, 120000);
+    if (ab) { out.solve = ab.minMoves; out.budget = ab.budget; }
+    sampleCache[ck] = out;
+    return out;
+  }
+
   function toJSON() { return JSON.parse(JSON.stringify(TEMPLATES)); }
   function load(obj) {
     if (!obj || typeof obj !== 'object') return false;
@@ -367,7 +444,8 @@
 
   global.Difficulty = {
     TEMPLATES: TEMPLATES, LABELS: LABELS, LADDER: LADDER, GROUPS: GROUPS,
-    rebuild: function () { load(buildLadder()); return TEMPLATES; },
+    rebuild: function () { sampleCache = {}; load(buildLadder()); return TEMPLATES; },
+    sample: sample, FEEL: FEEL,
     check: check, distance: distance, classify: classify,
     buildArgs: buildArgs, fit: fit, plan: plan, fitSyncOnce: fitSyncOnce, fitOneSync: fitOneSync,
     rebudget: rebudget, refineBudget: refineBudget,

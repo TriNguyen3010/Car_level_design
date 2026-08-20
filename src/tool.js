@@ -899,6 +899,39 @@
 
   /* ---------------- difficulty templates ---------------- */
 
+  function tierThumb(parent, key) {
+    var sp = DF.sample(key, PALETTE, 5, 5);
+    if (!sp) return;
+    var wrap = el('div', null, parent);
+    var g = el('div', 'tpl-thumb', wrap);
+    g.style.gridTemplateColumns = 'repeat(' + sp.cols + ', 13px)';
+    for (var r = 0; r < sp.rows; r++) {
+      for (var c = 0; c < sp.cols; c++) {
+        var cell = sp.grid[c][r];
+        var n = el('i', (cell.rev ? 'rev' : '') + (cell.hidden ? ' hid' : '') + (cell.stray ? ' stray' : ''), g);
+        if (!cell.rev && !cell.hidden) n.style.background = colorHex(cell.color);
+        n.title = cell.hidden ? 'xe ẩn' : cell.rev ? 'xe ngược chiều'
+          : cell.color + (cell.stray ? ' — xe lạ, không thuộc cột này' : '');
+      }
+    }
+    el('div', 'thumbLegend', wrap, sp.colors + ' màu / ' + sp.cols + ' cột');
+  }
+
+  function winBars(parent, tpl) {
+    var box = el('div', 'bars', parent);
+    var med = tpl.medians || {};
+    [['giỏi', med.winCareful, '#4ec97a'],
+     ['trung bình', med.winAvg, '#4a90d9'],
+     ['ẩu', med.winSloppy, '#e05c4c']].forEach(function (row) {
+      el('span', 'who', box, row[0]);
+      var track = el('span', 'track', box);
+      var fill = el('i', null, track);
+      fill.style.width = Math.round((row[1] || 0) * 100) + '%';
+      fill.style.background = row[2];
+      el('span', 'pct', box, Math.round((row[1] || 0) * 100) + '%');
+    });
+  }
+
   function renderTemplates() {
     var box = clear($('tplCards'));
     var m = lastMeasure;
@@ -915,7 +948,7 @@
     Object.keys(DF.TEMPLATES).forEach(function (key) {
       var tpl = DF.TEMPLATES[key];
       var chk = m && m.valid ? DF.check(L, m, key) : null;
-      var warn = DF.sizeWarning(L, key);
+      var sp = DF.sample(key, PALETTE, 5, 5);
       var card = el('div', 'tpl' + (chk && chk.pass === chk.total ? ' match' : ''), box);
 
       var head = el('div', 'tpl-head', card);
@@ -926,27 +959,33 @@
            head, chk.pass + '/' + chk.total + ' tiêu chí');
       }
       el('span', 'grow', head).style.flex = '1';
-
       var apply = el('button', 'primary', head, 'Áp dụng cho ' + scopeNow().label);
       apply.addEventListener('click', function () { fitTemplate(key); });
       var reb = el('button', null, head, 'Chỉ đặt lại budget');
-      reb.title = 'Giữ nguyên lưới, chỉ đặt budget theo slack của tier';
+      reb.title = 'Giữ nguyên lưới, chỉ đặt budget theo slack của bậc';
       reb.addEventListener('click', function () { rebudgetTemplate(key); });
 
-      el('div', 'tpl-body', card).innerHTML = tpl.focus;
-      el('div', 'tpl-body', card).innerHTML = tpl.why;
-      el('div', 'tpl-when', card, 'Dùng cho: ' + tpl.when +
-        '  ·  tối thiểu ' + (tpl.minCols || 2) + '×' + (tpl.minRows || 2));
-
-      var knobs = el('div', 'tpl-knobs', card);
-      var b = tpl.build;
-      [['số màu / số cột', b.colorRatio.toFixed(2)],
-       ['mật độ xe lạ', Math.round(b.strayDensity * 100) + '%'],
-       ['xe ẩn', Math.round(b.hiddenRatio * 100) + '%'],
-       ['slack', b.slack.toFixed(2) + 'x']].forEach(function (kv) {
-        el('span', 'knob', knobs).innerHTML = kv[0] + ' <b>' + kv[1] + '</b>';
+      var top = el('div', 'tpl-top', card);
+      tierThumb(top, key);
+      var mid2 = el('div', 'tpl-mid', top);
+      el('div', 'tpl-feel', mid2, '“' + tpl.feel + '”');
+      var facts = el('div', 'tpl-facts', mid2);
+      var strays = 0, hid = 0;
+      sp.grid.forEach(function (col) {
+        col.forEach(function (x) { if (x.stray) strays++; if (x.hidden) hid++; });
       });
+      facts.innerHTML =
+        'Bàn mẫu ' + sp.cols + '×' + sp.rows + ': <b>' + strays + '</b> xe lạ' +
+        (hid ? ', <b>' + hid + '</b> xe ẩn' : ', không xe ẩn') +
+        (sp.solve ? '. Lời giải <b>' + sp.solve + '</b> move, cho <b>' + sp.budget + '</b>' : '') +
+        '.<br>Dùng cho: ' + tpl.when + ' · bàn tối thiểu ' + tpl.minCols + '×' + tpl.minRows;
+      winBars(mid2, tpl);
 
+      var det = el('details', 'tpl-why', card);
+      el('summary', null, det, '▸ Vì sao bậc này khó theo kiểu đó');
+      el('div', 'body', det).innerHTML = tpl.focus + '<br><br>' + tpl.why;
+
+      var warn = DF.sizeWarning(L, key);
       if (warn) el('div', 'flag warn', card, warn).style.marginTop = '8px';
 
       if (chk) {
@@ -961,67 +1000,6 @@
       }
     });
     $('tplJson').value = JSON.stringify(DF.toJSON(), null, 2);
-  }
-
-  function critTable(chk) {
-    return chk.rows.map(function (r) {
-      return '<div class="crit"><span class="' + (r.ok ? 'y' : 'm') + '">' + (r.ok ? '✓' : '✗') +
-             '</span><span class="lbl">' + r.label + '</span><span>' + r.value +
-             '</span><span class="band">cần ' + r.band + '</span></div>';
-    }).join('');
-  }
-
-  /* Applying a tier should end with a level that IS that tier, so the fit
-   * escalates instead of giving up: grow the board to the tier's minimum if it
-   * is too small, then widen the seed search, then add a row. It stops at the
-   * first board that passes every criterion, and if nothing does it says which
-   * criteria it could not reach rather than just failing. */
-  function fitPlan(L, tpl) {
-    var c0 = Math.max(L.cols, tpl.minCols || 2);
-    var r0 = Math.max(L.rows, tpl.minRows || 2);
-    var steps = [
-      { cols: c0, rows: r0, tries: 8, label: c0 + '×' + r0 },
-      { cols: c0, rows: r0, tries: 16, label: c0 + '×' + r0 + ', tìm rộng hơn' }
-    ];
-    if (r0 < 9) steps.push({ cols: c0, rows: r0 + 1, tries: 12, label: c0 + '×' + (r0 + 1) + ', thêm 1 hàng' });
-    if (c0 < 9 && r0 < 9) steps.push({ cols: c0 + 1, rows: r0 + 1, tries: 12, label: (c0 + 1) + '×' + (r0 + 1) });
-    return steps;
-  }
-
-  /* Run one level through the escalation plan. onStep(frac, text) for progress. */
-  function fitOne(L, key, seedBase, onStep, done) {
-    var tpl = DF.TEMPLATES[key];
-    var steps = fitPlan(L, tpl);
-    var si = 0, best = null, log = [];
-
-    function step() {
-      if (si >= steps.length || (best && best.check.pass === best.check.total)) {
-        done(best, log, steps.length);
-        return;
-      }
-      var st = steps[si];
-      var probe = JSON.parse(JSON.stringify(L));
-      probe.cols = st.cols; probe.rows = st.rows;
-      probe.grid = [];
-      for (var c = 0; c < st.cols; c++) {
-        probe.grid[c] = [];
-        for (var r = 0; r < st.rows; r++) probe.grid[c][r] = 'yellow';
-      }
-      probe.pad = 'REV';
-
-      DF.fit(probe, key, PALETTE, { tries: st.tries, runs: 600, seed: seedBase + si * 131 },
-        function (i, n) {
-          if (onStep) onStep((si + i / n) / steps.length,
-            'bước ' + (si + 1) + '/' + steps.length + ' · ' + st.label + ' · bàn thử ' + i + '/' + n);
-        },
-        function (res) {
-          if (res && (!best || res.distance < best.distance)) best = res;
-          log.push(st.label + ': ' + (res ? res.check.pass + '/' + res.check.total : 'không sinh được'));
-          si++;
-          step();
-        });
-    }
-    step();
   }
 
   /* Returns {kind, from, to, label} for whatever the scope control says. */
