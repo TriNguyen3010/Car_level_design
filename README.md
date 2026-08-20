@@ -164,10 +164,12 @@ Một bộ là một **cách tiếp cận**, không phải một độ dốc. M�
 
 | Bộ | Bậc theo level | Ý đồ |
 |---|---|---|
-| **Gốc · Mặc định** | — | Dựng lại từ ảnh chụp game tham chiếu. Budget rộng 2.5–8.6x nên gần như không thể thua. |
-| **Dẫn tay · Dễ** | `1 1 2 2 3 `**`1`**` 3 4 4 `**`3`** | Không ai được thua trong 10 level đầu. Thua ở đây là mất install. |
-| **Nhịp · Trung** | `1 2 3 `**`2`**` 4 5 6 `**`5`**` 7 `**`6`** | Dạy player rằng độ khó có nhịp, để level khó không đọc thành tường chắn. |
-| **Thử ngay · Khó** | `2 4 6 `**`5`**` 7 8 `**`7`**` 9 `**`8`**` 10` | Lọc và tôn trọng. Đỉnh sớm ở level 3. Kết đúng ở đỉnh. |
+| **Gốc** | — | Dựng từ ảnh chụp. Budget rộng 2.5–8.6x — gần như không thể thua. |
+| **Dễ** (Dẫn tay) | `1 1 2 2 3 `**`1`**` 3 4 4 `**`3`** | Không ai được thua. Mỗi cơ chế mới xong thì hạ bậc cho player làm lại dễ. |
+| **Trung bình** (Nhịp) | `1 2 3 `**`2`**` 4 5 6 `**`5`**` 7 `**`6`** | Độ khó có nhịp. Leo 2–3 level rồi thả 1. Level 10 không phải đỉnh. |
+| **Khó** (Thử ngay) | `2 4 6 `**`5`**` 7 8 `**`7`**` 9 `**`8`**` 10` | Lọc player đã quen thể loại. Đỉnh sớm ở level 3, kết đúng ở đỉnh. |
+
+Text trong tool giữ **một dòng mỗi bộ** — tooltip và header panel không phải chỗ cho ba câu. Lý luận đầy đủ nằm ở đây, phần dưới.
 
 Số **đậm** là chỗ nghỉ chủ ý. Xu hướng đo được: **−4.41 / −2.15 / −4.89** điểm win mỗi level.
 
@@ -175,9 +177,9 @@ Số **đậm** là chỗ nghỉ chủ ý. Xu hướng đo được: **−4.41 /
 
 Sinh lại: `node tools/make_sets.js && python3 tools/pack_sets.py`
 
-### Tab Độ khó
+### Tab Độ khó — tab đầu tiên, mặc định mở
 
-Tab riêng, ưu tiên biểu đồ vì **một bộ cấp độ là một hình dạng**, mà hình dạng là thứ để nhìn — mười dòng số buộc người đọc tự dựng lại hình trong đầu.
+Ưu tiên biểu đồ vì **một bộ cấp độ là một hình dạng**, mà hình dạng là thứ để nhìn — mười dòng số buộc người đọc tự dựng lại hình trong đầu.
 
 - **Bốn bộ cạnh nhau** — bốn đường trên cùng một trục bậc, bộ đang chọn vẽ đậm, chỗ nghỉ chủ ý là điểm tròn. Ba cách tiếp cận khác nhau nhìn ra ngay chứ không phải so ba bảng.
 - **Bộ đang chọn** — bậc là cột (cột xanh = chỗ nghỉ), **tỉ lệ thắng thật là đường vẽ trên đó**. Hai thứ này lệch nhau đủ thường xuyên nên chỉ vẽ bậc là gây hiểu sai. Bấm **Đo cả bộ** để thay ước lượng bằng số playtest thật.

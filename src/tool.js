@@ -382,7 +382,7 @@
           : 'Đang ở <b>Level Design</b> — đủ 6 tab: Tune (thang 10 bậc + gợi ý), Edit (vẽ lưới), Feel (animation, kiểu dáng xe).';
     }
     var active = document.querySelector('#tabs button.on');
-    if (active && TAB_MODES[active.dataset.tab] && TAB_MODES[active.dataset.tab] !== m) switchTab('play');
+    if (active && TAB_MODES[active.dataset.tab] && TAB_MODES[active.dataset.tab] !== m) switchTab('curve');
     renderPlaytuneBar();
     /* The strip is useless without a tier, and the tier comes from a measure —
      * so entering the mode pays for one rather than showing dead buttons. */
@@ -774,6 +774,40 @@
     var spec = setSpec(), key = currentSet;
     var ts = tiersOf(key), n = ts.length;
     var mea = measuredSet[key];
+    if (!ts.some(Boolean)) {
+      el('div', 'flag', box).innerHTML =
+        'Bộ <b>' + (SET_WORD[key] || setSpec().label) + '</b> không khai bậc — nó là bàn dựng lại từ ' +
+        'ảnh chụp, không sinh từ thang bậc. Bấm <b>Đo cả bộ</b> để xem tỉ lệ thắng thật của nó, ' +
+        'hoặc so nó với ba bộ kia ở biểu đồ trên.';
+      if (mea) {
+        var W2 = 660, H2 = 150, pl = 32, pr = 34, pb = 22, pt = 10;
+        var bw2 = (W2 - pl - pr) / n;
+        function Yw2(w) { return pt + (1 - w) * (H2 - pt - pb); }
+        var g = '<svg viewBox="0 0 ' + W2 + ' ' + H2 + '" style="width:100%;height:auto">';
+        g += '<rect width="' + W2 + '" height="' + H2 + '" fill="#10131a" rx="8"/>';
+        [0.5, 1].forEach(function (w) {
+          g += '<line x1="' + pl + '" y1="' + Yw2(w) + '" x2="' + (W2 - pr) + '" y2="' + Yw2(w) +
+               '" stroke="#242936"/><text x="' + (W2 - pr + 4) + '" y="' + (Yw2(w) + 3) +
+               '" fill="#93a0b3" font-size="9">' + Math.round(w * 100) + '%</text>';
+        });
+        [['winCareful', '#4ec97a'], ['winAvg', '#4a90d9'], ['winSloppy', '#e05c4c']].forEach(function (m) {
+          var pts = mea.map(function (r, i) { return r ? (pl + i * bw2 + bw2 * 0.5) + ',' + Yw2(r[m[0]]) : null; }).filter(Boolean);
+          if (pts.length > 1) g += '<polyline points="' + pts.join(' ') + '" fill="none" stroke="' + m[1] + '" stroke-width="2"/>';
+        });
+        for (var q = 0; q < n; q++) {
+          g += '<text x="' + (pl + q * bw2 + bw2 * 0.5) + '" y="' + (H2 - 6) +
+               '" fill="#93a0b3" font-size="9" text-anchor="middle">' + (q + 1) + '</text>';
+        }
+        g += '</svg>';
+        var wrap = el('div', null, box);
+        wrap.innerHTML = g;
+        el('div', 'legend', box).innerHTML =
+          '<span><i style="background:#4ec97a"></i>win giỏi</span>' +
+          '<span><i style="background:#4a90d9"></i>win trung bình</span>' +
+          '<span><i style="background:#e05c4c"></i>win ẩu</span>';
+      }
+      return;
+    }
     var metric = spec.rhythmOn || 'winAvg';
     var W = 660, H = 230, padL = 32, padR = 34, padB = 24, padT = 12;
     var bw = (W - padL - padR) / n;
@@ -2425,6 +2459,7 @@
   setBoardVisible(true);
   loadLevel(0);
   renderJournal();
+  renderCurveTab();
   showGuide(false);
 
   /* Sprites arrive asynchronously; redraw once they do. */

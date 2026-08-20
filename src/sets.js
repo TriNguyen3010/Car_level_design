@@ -31,9 +31,7 @@
     'default': {
       name: 'Gốc',
       label: 'Mặc định',
-      intent:
-        'Bộ dựng lại từ ảnh chụp game tham chiếu. Giữ nguyên để so sánh — budget của nó ' +
-        'rộng 2.5–8.6 lần lời giải nên gần như không thể thua.',
+      intent: 'Dựng từ ảnh chụp game tham chiếu. Budget rộng 2.5–8.6x — gần như không thể thua.',
       note: '',
       rhythmOn: 'winAvg',
       breathers: [],
@@ -43,14 +41,9 @@
       name: 'Dẫn tay',
       label: 'Dễ',
       intent:
-        'Không ai được thua trong 10 level đầu — thua ở đây là mất install, không phải tạo ' +
-        'thử thách. Nhịp dạy → tập → củng cố: sau mỗi level giới thiệu cái mới thì level sau ' +
-        'sụt xuống để player làm lại thứ vừa học trong điều kiện dễ, để cảm giác "mình làm ' +
-        'được" chứ không phải "mình vừa may".',
+        'Không ai được thua. Mỗi cơ chế mới xong thì hạ bậc cho player làm lại dễ.',
       note:
-        'Nhịp của bộ này đo trên player ẩu, không phải trung bình: ở bậc 1–4 player trung ' +
-        'bình ngồi ở 98–100% nên không có chỗ để cảm thấy sụt. Chỗ nghỉ ở level 6 sâu hai ' +
-        'bậc, vì sụt một bậc đo ra không cảm được gì.',
+        'Nhịp đo trên player ẩu — bậc 1–4 player trung bình luôn 98–100%.',
       rhythmOn: 'winSloppy',
       breathers: [6, 10],
       levels: [
@@ -80,12 +73,9 @@
       name: 'Nhịp',
       label: 'Trung',
       intent:
-        'Dạy player rằng độ khó có nhịp, để một level khó đọc thành "level này khó thôi, ' +
-        'level sau đỡ" chứ không thành tường chắn. Leo 2–3 level rồi thả 1. Level 10 cố ý ' +
-        'không phải đỉnh, để bước sang level 11 với cảm giác thành thạo.',
+        'Độ khó có nhịp. Leo 2–3 level rồi thả 1. Level 10 không phải đỉnh.',
       note:
-        'Chu kỳ 3 chứ không phải 2 — trên 10 level, chu kỳ 2 chỉ cho 5 đỉnh và player đọc ' +
-        'thành lộn xộn chứ không ra nhịp.',
+        'Chu kỳ 3, không phải 2: 10 level quá ngắn cho chu kỳ 2.',
       rhythmOn: 'winAvg',
       breathers: [4, 8, 10],
       levels: [
@@ -115,13 +105,9 @@
       name: 'Thử ngay',
       label: 'Khó',
       intent:
-        'Lọc và tôn trọng. Nhắm player đã quen thể loại — 8 level tutorial làm họ bỏ game. ' +
-        'Đỉnh sớm ở level 3 để phát tín hiệu "game này không phải đồ chơi". Kết đúng ở đỉnh, ' +
-        'khác hai bộ kia: nhiệm vụ của bộ này là lọc, nên qua được level 10 chính là tín ' +
-        'hiệu.',
+        'Lọc player đã quen thể loại. Đỉnh sớm ở level 3, kết đúng ở đỉnh.',
       note:
-        'Chỗ nghỉ nông hơn hai bộ kia và không level nào cho player trung bình trên 99%. ' +
-        'Player ẩu tụt xuống 7% ở level 10 — đó là chủ ý.',
+        'Chỗ nghỉ nông. Player ẩu xuống 7% ở level 10.',
       rhythmOn: 'winAvg',
       breathers: [4, 7, 9],
       levels: [
