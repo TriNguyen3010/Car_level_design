@@ -337,7 +337,7 @@
   function LL(v) {
     if (v == null) return v;
     if (global.I18N) return global.I18N.L(v);
-    return v.vi != null ? v.vi : v;
+    return v.en != null ? v.en : (v.vi != null ? v.vi : v);
   }
 
   var pop = null;

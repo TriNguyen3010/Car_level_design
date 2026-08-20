@@ -187,7 +187,7 @@
       var ok = v != null && v >= band[0] - 1e-9 && v <= band[1] + 1e-9;
       if (ok) pass++;
       rows.push({
-        key: k, label: (global.I18N ? global.I18N.L(LABELS[k]) : (LABELS[k] && LABELS[k].vi)) || k, ok: ok,
+        key: k, label: (global.I18N ? global.I18N.L(LABELS[k]) : (LABELS[k] && LABELS[k].en)) || k, ok: ok,
         value: fmt(k, v),
         band: fmt(k, band[0]) + ' – ' + fmt(k, band[1]),
         low: v != null && v < band[0]

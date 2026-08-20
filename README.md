@@ -156,7 +156,7 @@ Mọi chỉ số đều có dấu <b>?</b> bấm được, mở ra giải thích
 
 ## Song ngữ
 
-Nút **EN / VI** ở thanh header, ghi nhớ trong localStorage. Hai cơ chế, cố ý tách:
+Mặc định **tiếng Anh**. Nút **VI / EN** ở thanh header đổi qua lại, và lựa chọn được ghi nhớ trong localStorage — đã chọn rồi thì lần sau luôn thắng mặc định. Hai cơ chế, cố ý tách:
 
 - `I18N.t('key')` — nhãn và chuỗi ngắn, gom hết trong `src/i18n.js` (228 key) nên thiếu một cái là thấy ngay.
 - `I18N.L({vi, en})` — nội dung dài **nằm cùng module nó thuộc về**: giải thích của một bậc ở `difficulty.js`, ý đồ của một bộ ở `sets.js`, 19 topic help ở `help.js`. Bê chúng sang một file dịch riêng là tách khỏi thứ chúng miêu tả.

@@ -12,7 +12,7 @@
   'use strict';
 
   var KEY = 'carsort.lang';
-  var lang = 'vi';
+  var lang = 'en';                 /* default; a stored choice always wins */
   try { var st = localStorage.getItem(KEY); if (st === 'en' || st === 'vi') lang = st; } catch (e) {}
 
   var D = {
@@ -558,7 +558,7 @@
   /* m('key', a, b) fills {0} {1} in the template for the active language. */
   function m(key) {
     var e = M[key];
-    var str = e ? (e[lang] != null ? e[lang] : e.vi) : key;
+    var str = e ? (e[lang] != null ? e[lang] : (e.en != null ? e.en : e.vi)) : key;
     var args = Array.prototype.slice.call(arguments, 1);
     return str.replace(/\{(\d+)\}/g, function (_, i) {
       return args[+i] != null ? args[+i] : '';
@@ -568,14 +568,15 @@
   function t(key) {
     var e = D[key];
     if (!e) return key;
-    return e[lang] != null ? e[lang] : e.vi;
+    return e[lang] != null ? e[lang] : (e.en != null ? e.en : e.vi);
   }
 
   /* For {vi, en} pairs held by other modules. */
   function L(obj) {
     if (obj == null) return '';
     if (typeof obj === 'string') return obj;
-    return obj[lang] != null ? obj[lang] : (obj.vi != null ? obj.vi : '');
+    if (obj[lang] != null) return obj[lang];
+    return obj.en != null ? obj.en : (obj.vi != null ? obj.vi : '');
   }
 
   function apply(root) {
