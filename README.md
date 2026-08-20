@@ -154,6 +154,39 @@ Mọi chỉ số đều có dấu <b>?</b> bấm được, mở ra giải thích
 
 `choice` là dial độ khó chính, không phải grid size. Cách tăng nó: **đặt số màu ít hơn số cột** — khi 2 cột cùng màu thì player phải chọn cột nào để nhả xe.
 
+## Bốn bộ cấp độ
+
+Chọn ở góc trái trên. **Đổi bộ là về level 1** — mỗi bộ là một curve khác, giữ số level cũ sẽ rơi vào giữa ramp của bộ mới.
+
+Một bộ là một **cách tiếp cận**, không phải một độ dốc. Mỗi bộ có ý đồ riêng và **cố ý không tuyến tính**, vì chỗ nghỉ sau một cơ chế mới là thứ làm player cảm thấy *mình làm được* thay vì *mình vừa may*.
+
+| Bộ | Bậc theo level | Ý đồ |
+|---|---|---|
+| **Gốc · Mặc định** | — | Dựng lại từ ảnh chụp game tham chiếu. Budget rộng 2.5–8.6x nên gần như không thể thua. |
+| **Dẫn tay · Dễ** | `1 1 2 2 3 `**`1`**` 3 4 4 `**`3`** | Không ai được thua trong 10 level đầu. Thua ở đây là mất install. |
+| **Nhịp · Trung** | `1 2 3 `**`2`**` 4 5 6 `**`5`**` 7 `**`6`** | Dạy player rằng độ khó có nhịp, để level khó không đọc thành tường chắn. |
+| **Thử ngay · Khó** | `2 4 6 `**`5`**` 7 8 `**`7`**` 9 `**`8`**` 10` | Lọc và tôn trọng. Đỉnh sớm ở level 3. Kết đúng ở đỉnh. |
+
+Số **đậm** là chỗ nghỉ chủ ý. Xu hướng đo được: **−4.41 / −2.15 / −4.89** điểm win mỗi level.
+
+Sinh lại: `node tools/make_sets.js && python3 tools/pack_sets.py`
+
+### Hai thứ chỉ lộ ra khi kiểm chứng hình dạng
+
+Bậc ánh xạ sang một **dải** win rate, không phải một điểm, nên răng cưa trên số bậc chưa chắc thành răng cưa trên cảm giác. Kiểm chứng bằng cách playtest cả 30 level rồi soi hình dạng curve đo được — và nó bắt được hai lỗi:
+
+**1. Dải của hai bậc cạnh nhau chồng lên nhau**, nên chỗ nghỉ sinh ở giữa dải có thể đo ra **khó hơn** cái đỉnh nó vừa theo sau. Bộ Trung level 8 (bậc 5) ban đầu ra 82% trong khi level 7 (bậc 6) ra 85%. Sửa: chỗ nghỉ luôn sinh ở **đầu dễ của dải** — thử nhiều seed, giữ cái điểm cao nhất mà vẫn đạt đủ tiêu chí.
+
+**2. Chỗ nghỉ đào sâu ngay trước một đỉnh mới thì thành tường**, vì leo ra khỏi nó là 3 bậc. Chính **cảnh báo curve của tool** bắt được: *"Level 8 → 9 nhảy 3 bậc"*. Đã làm hai chỗ nghỉ giữa bộ nông đi một bậc.
+
+Bộ Dễ có một điểm riêng: nhịp của nó đo trên **player ẩu**, không phải trung bình — ở bậc 1–4 player trung bình ngồi ở 98–100% nên không có chỗ mà cảm thấy sụt, và bộ Dễ vốn nhắm người hay sai. Chỗ nghỉ ở level 6 phải sâu **hai bậc** vì sụt một bậc đo ra không cảm được gì.
+
+Kết quả: 8/8 chỗ nghỉ đều cảm được (+5 đến +24 điểm), 30/30 level sinh ra đạt đủ 7/7 tiêu chí của bậc mình.
+
+### Cảnh báo curve theo xu hướng
+
+Vì hai bộ **cố ý** đi lùi, cảnh báo không mắng từng bước nữa mà soi hình dạng: xu hướng hồi quy cả chuỗi phải đi lên, sụt sâu ≥3 bậc mà không khai là chỗ nghỉ thì báo, nhảy lên ≥3 bậc thì báo, và level cuối là đỉnh thì báo — trừ bộ Khó, nơi kết ở đỉnh là chủ ý.
+
 ## Ba chế độ
 
 Chuyển bằng nhóm nút góc phải trên. Tool mở ra ở **Test**.

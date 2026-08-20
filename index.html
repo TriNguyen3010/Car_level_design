@@ -13,6 +13,8 @@
 <body>
 <div id="app">
   <div id="top">
+    <select id="setPick" title="Bộ cấp độ — đổi bộ là về level 1"></select>
+    <span class="sep"></span>
     <button id="prevLv" title="Level trước">◀</button>
     <span class="badge">Level <b id="lvName">1</b> <span id="lvCount" style="color:var(--ink-dim)"></span></span>
     <button id="nextLv" title="Level sau">▶</button>
@@ -74,6 +76,7 @@
         </div>
 
         <div class="panel" data-panel="journal">
+          <div id="setIntent" class="card"></div>
           <h3>Bậc đã chốt cho từng level</h3>
           <div id="journalSet"></div>
           <h3>Curve bậc</h3>
@@ -252,7 +255,7 @@
    the load order, which plain dynamic injection would not. */
 (function () {
   var t = Date.now();
-  [ 'help', 'modal', 'sprites', 'engine', 'levels', 'solver', 'gen', 'playtest',
+  [ 'help', 'modal', 'sprites', 'engine', 'levels', 'sets', 'solver', 'gen', 'playtest',
     'tuner', 'difficulty', 'feel', 'render', 'tool'
   ].forEach(function (m) {
     document.write('<script src="src/' + m + '.js?t=' + t + '"><\/script>');

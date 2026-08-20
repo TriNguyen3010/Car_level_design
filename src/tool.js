@@ -9,8 +9,35 @@
 
   var PALETTE = Object.assign({}, global.LevelData.palette);
   var DEFAULT_TEMPLATES = global.Difficulty.toJSON();
-  var levels = JSON.parse(JSON.stringify(global.LevelData.levels));
+  var levelHistory = [];
+  var tierOf = {};        // level index -> tier currently loaded
+  var lockedTier = {};    // level index -> tier the designer signed off
+  var SETS = global.LevelSets ? JSON.parse(JSON.stringify(global.LevelSets.SETS)) : null;
+  var SET_ORDER = global.LevelSets ? global.LevelSets.order.slice() : [];
+  var currentSet = SETS ? 'default' : null;
+  var levels = SETS ? SETS[currentSet].levels : JSON.parse(JSON.stringify(global.LevelData.levels));
   var idx = 0;
+
+  function setSpec() { return SETS ? SETS[currentSet] : { name: '', breathers: [], rhythmOn: 'winAvg' }; }
+
+  /* Switching campaign restarts from level 1 — the sets are different curves,
+   * so carrying a level index across them would land the player mid-ramp. */
+  function switchSet(key) {
+    if (!SETS || !SETS[key] || key === currentSet) return;
+    currentSet = key;
+    levels = SETS[key].levels;
+    analysisCache = {};
+    lastMeasure = null;
+    levelHistory.length = 0;
+    tierOf = {}; lockedTier = {};
+    idx = 0;
+    $('setPick').value = key;
+    renderBanner();
+    loadLevel(0);
+    renderSetTable();
+    renderJournal();
+    note('bộ ' + SETS[key].name + ' (' + SETS[key].label + ') — về level 1');
+  }
   var state = null;
   var history = [];
   var analysisCache = {};        // level index -> analysis
@@ -335,8 +362,6 @@
    * the author can finish the game.
    */
 
-  var tierOf = {};        // level index -> tier currently loaded
-  var lockedTier = {};    // level index -> tier the designer signed off
   var attempts = [];
   var runStart = null;
   var runUndos = 0;
@@ -344,6 +369,7 @@
   function tierNow() {
     var t = tierOf[idx];
     if (t) return t;
+    if (level().tier) return level().tier;
     var m = lastMeasure;
     if (m && m.valid) {
       var c = DF.classify(level(), m);
@@ -491,31 +517,73 @@
     renderJournal();
   }
 
-  /* Complains about a broken ramp, not about the absolute numbers. */
+  /* Complains about the SHAPE of the ramp, not about each step.
+   *
+   * Two of the campaigns dip on purpose — a breather after a new mechanic is
+   * what makes the player feel competent rather than lucky — so a per-step
+   * "this one is easier than the last" check would have the tool scolding its
+   * own design. What matters is the trend across the whole run, a dip deep
+   * enough to read as a collapse, and a rise steep enough to wall. */
   function curveWarnings() {
-    var out = [], seq = [];
+    var out = [], seq = [], spec = setSpec();
+    var breathers = spec.breathers || [];
     for (var i = 0; i < levels.length; i++) {
-      if (lockedTier[i]) seq.push({ i: i, id: levels[i].id != null ? levels[i].id : i + 1, t: lockedTier[i] });
+      var t = lockedTier[i] || tierOf[i] || levels[i].tier;
+      if (t) seq.push({ i: i, id: levels[i].id != null ? levels[i].id : i + 1, t: t });
     }
+    if (seq.length < 3) return out;
+
+    var n = seq.length, sx = 0, sy = 0, sxy = 0, sxx = 0;
+    seq.forEach(function (p, k) { sx += k; sy += p.t; sxy += k * p.t; sxx += k * k; });
+    var slope = (n * sxy - sx * sy) / (n * sxx - sx * sx);
+    if (slope <= 0.02) {
+      out.push('Xu hướng cả chuỗi là <b>' + slope.toFixed(2) + ' bậc/level</b> — game không khó dần. ' +
+               'Chỗ nghỉ chủ ý thì tốt, nhưng trung bình phải đi lên.');
+    }
+
     for (var k = 1; k < seq.length; k++) {
       var a = seq[k - 1], b = seq[k];
-      if (b.t < a.t) {
-        out.push('Level ' + b.id + ' (bậc ' + b.t + ') <b>dễ hơn</b> level ' + a.id +
-                 ' (bậc ' + a.t + ') — player đi tới sẽ thấy game nhẹ đi.');
-      } else if (b.t - a.t >= 3) {
+      var declared = breathers.indexOf(b.id) >= 0;
+      if (b.t - a.t >= 3) {
         out.push('Level ' + a.id + ' → ' + b.id + ' nhảy <b>' + (b.t - a.t) +
-                 ' bậc</b>. Nhảy quá 2 bậc thường thành tường chắn, player rơi ở đây.');
+                 ' bậc</b>. Quá 2 bậc thường thành tường chắn.');
+      }
+      if (b.t < a.t && !declared && a.t - b.t >= 3) {
+        out.push('Level ' + b.id + ' tụt <b>' + (a.t - b.t) + ' bậc</b> so với level ' + a.id +
+                 ' mà không khai là chỗ nghỉ — sụt sâu thế player đọc thành game hết ý tưởng.');
       }
     }
-    if (seq.length >= 3) {
-      var flat = seq.every(function (x) { return x.t === seq[0].t; });
-      if (flat) out.push('Cả ' + seq.length + ' level đã chốt cùng <b>bậc ' + seq[0].t +
-                         '</b> — curve phẳng, player không thấy game khó dần.');
+
+    var last = seq[seq.length - 1], peak = seq.reduce(function (m, p) { return p.t > m.t ? p : m; }, seq[0]);
+    if (last.t === peak.t && last.i === peak.i && currentSet !== 'hard') {
+      out.push('Level cuối (' + last.id + ') <b>chính là đỉnh</b>. Trừ khi bộ này cố tình lọc player, ' +
+               'nên kết ở một chỗ nghỉ để player bước sang level sau với cảm giác thành thạo.');
     }
     return out;
   }
 
+  function renderSetIntent() {
+    var box = $('setIntent');
+    if (!box) return;
+    clear(box);
+    var spec = setSpec();
+    if (!spec.intent) return;
+    var head = el('div', null, box);
+    el('span', 'nm', head, spec.name);
+    el('span', 'lb', head, spec.label + (spec.rhythmOn === 'winSloppy' ? ' · nhịp đo trên player ẩu' : ''));
+    el('div', 'txt', box).innerHTML = spec.intent;
+    if (spec.note) el('div', 'txt', box).innerHTML = spec.note;
+    var seq = el('div', 'seq', box);
+    var parts = levels.map(function (L, i) {
+      var t = lockedTier[i] || tierOf[i] || L.tier;
+      var isB = (spec.breathers || []).indexOf(L.id != null ? L.id : i + 1) >= 0;
+      return isB ? '<i>' + (t || '-') + '</i>' : String(t || '-');
+    });
+    seq.innerHTML = 'bậc: ' + parts.join(' ') + '  <span style="color:var(--ink-dim)">(xanh = chỗ nghỉ chủ ý)</span>';
+  }
+
   function renderJournal() {
+    renderSetIntent();
     var box = clear($('journalSet'));
     var t = el('table', 'grid', box);
     var hr = el('tr', null, el('thead', null, t));
@@ -527,7 +595,8 @@
       el('td', null, tr, String(L.id != null ? L.id : i + 1));
       el('td', null, tr, L.cols + '×' + L.rows);
       el('td', null, tr, String(L.moves));
-      el('td', null, tr, tierOf[i] ? String(tierOf[i]) : '—');
+      var declared = tierOf[i] || L.tier;
+      el('td', null, tr, declared ? String(declared) + (tierOf[i] ? '' : ' (bộ)') : '—');
       var td = el('td', null, tr);
       var pill = el('span', 'tierPill' + (lockedTier[i] ? ' set' : ''), td, lockedTier[i] ? String(lockedTier[i]) : '—');
       el('td', null, tr, String(attempts.filter(function (a) { return a.at === i; }).length));
@@ -713,7 +782,6 @@
 
   /* ---------------- tuning history ---------------- */
 
-  var levelHistory = [];
 
   /* One entry can cover many levels, so applying a tier across a range is a
    * single Hoàn tác rather than eight. */
@@ -1842,10 +1910,20 @@
     var pal = {};
     Object.keys(PALETTE).forEach(function (k) { if (used[k]) pal[k] = PALETTE[k]; });
     var out = {
-      version: 1,
-      note: 'grid[col][row], row 0 = đỉnh cột. "REV" = xe ngược chiều. "?" = xe ẩn.',
+      version: 2,
+      note: 'grid[col][row], row 0 = đỉnh cột. "REV" = xe ngược chiều. "?" = xe ẩn. ' +
+            'sets = 4 bộ cấp độ, mỗi bộ 10 level riêng; đổi bộ thì chơi lại từ level 1.',
       palette: pal,
       feel: F.toJSON(),
+      currentSet: currentSet,
+      sets: SETS ? SET_ORDER.reduce(function (acc, k) {
+        acc[k] = {
+          name: SETS[k].name, label: SETS[k].label, intent: SETS[k].intent,
+          breathers: SETS[k].breathers, rhythmOn: SETS[k].rhythmOn,
+          levels: SETS[k].levels
+        };
+        return acc;
+      }, {}) : undefined,
       levels: levels.map(function (L, i) {
         var o = { id: L.id != null ? L.id : i + 1, cols: L.cols, rows: L.rows, moves: L.moves };
         if (L.theme) o.theme = L.theme;
@@ -1891,7 +1969,14 @@
     if (!data.levels || !data.levels.length) { global.Modal.alert('Import lỗi', 'Không thấy mảng <b>levels</b> trong JSON.'); return; }
     if (data.palette) Object.assign(PALETTE, data.palette);
     if (data.feel) { F.load(data.feel); renderFeel(); }
-    levels = data.levels;
+    if (data.sets && SETS) {
+      Object.keys(data.sets).forEach(function (k) { SETS[k] = data.sets[k]; });
+      currentSet = data.currentSet && SETS[data.currentSet] ? data.currentSet : SET_ORDER[0];
+      $('setPick').value = currentSet;
+      levels = SETS[currentSet].levels;
+    } else {
+      levels = data.levels;
+    }
     analysisCache = {};
     idx = 0;
     renderBrushes();
@@ -1926,6 +2011,15 @@
   Array.prototype.forEach.call(document.querySelectorAll('#modeSwitch button'), function (b) {
     b.addEventListener('click', function () { setMode(b.dataset.mode); });
   });
+  if (SETS) {
+    var pick = $('setPick');
+    SET_ORDER.forEach(function (k) {
+      var o = el('option', null, pick, SETS[k].name + ' · ' + SETS[k].label);
+      o.value = k;
+    });
+    pick.value = currentSet;
+    pick.addEventListener('change', function () { switchSet(this.value); });
+  }
   $('journalClear').addEventListener('click', function () {
     global.Modal.open({
       title: 'Xoá nhật ký?',

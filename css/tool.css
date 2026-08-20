@@ -521,3 +521,11 @@ body[data-mode="playtune"] #top { box-shadow: inset 0 2px 0 #7a52d0; }
 .tpl-why .body { color: var(--ink-dim); margin-top: 6px; }
 .tpl-why .body b { color: var(--ink); }
 .thumbLegend { color: var(--ink-dim); font-size: 10px; text-align: center; margin-top: 4px; }
+
+#setPick { font-weight: 700; }
+#setIntent:empty { display: none; }
+#setIntent .nm { font-size: 14px; font-weight: 700; }
+#setIntent .lb { color: var(--ink-dim); font-size: 12px; margin-left: 6px; }
+#setIntent .txt { color: var(--ink-dim); margin-top: 5px; }
+#setIntent .seq { font-family: ui-monospace, Menlo, monospace; font-size: 12px; margin-top: 6px; color: var(--ink); }
+#setIntent .seq i { color: var(--good); font-style: normal; font-weight: 700; }
