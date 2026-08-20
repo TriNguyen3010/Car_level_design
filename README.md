@@ -64,11 +64,21 @@ Bài học: **gộp màu và siết budget trừ nhau, không cộng.** Ít màu
 
 ### Phạm vi áp dụng
 
-Ô **Áp dụng cho** chọn:
-- **chỉ level đang chọn** (mặc định) — chỉ ghi vào level đang mở
-- **nhiều level** — nhập khoảng từ/đến, mỗi level được sinh và playtest riêng, **giữ nguyên kích thước bàn của nó** (chỉ mở rộng nếu nhỏ hơn mức tối thiểu của bậc)
+Ô **Áp dụng cho** có 3 lựa chọn:
 
-Cả khoảng là **một** lần Hoàn tác. Kiểm chứng: áp Độ 2 cho level 1–3 → 3/3 đạt 7/7, L1 tự mở 4×4 lên 4×5, một lần Hoàn tác trả lại cả ba.
+| | |
+|---|---|
+| **chỉ level đang chọn** (mặc định) | chỉ ghi vào level đang mở |
+| **toàn bộ level** | cả set, không cần nhập gì |
+| **khoảng tuỳ chọn** | nhập từ/đến |
+
+Mỗi level được sinh và playtest **riêng**, **giữ nguyên kích thước bàn của nó** (chỉ mở rộng nếu nhỏ hơn mức tối thiểu của bậc). Cả khoảng là **một** lần Hoàn tác, không phải 10 lần. Có nút **Huỷ** giữa lúc chạy.
+
+Áp một bậc cho cả set thì tool cảnh báo curve sẽ phẳng và gợi ý chia khoảng.
+
+Kiểm chứng: áp Độ 2 cho cả 10 level → **10/10 đạt 7/7 trong 1.7 giây**, một lần Hoàn tác trả lại đúng cả 10.
+
+Việc này chạy trong Web Worker. Trước đó nó chunk bằng `setTimeout` trên luồng chính, và tab nền bóp mỗi `setTimeout` xuống ~1 giây — 10 level cần hàng trăm lần yield nên mất **nhiều phút** thay vì 1.7 giây.
 
 Mỗi thẻ có:
 - **Áp dụng** — sinh cho tới khi **đạt tiêu chí**, không chặn lại. Bàn nhỏ hơn mức tối thiểu thì tự mở rộng; vẫn lệch thì mở rộng tìm kiếm; vẫn lệch thì thêm 1 hàng. Kiểm chứng: 20/20 trường hợp bắt đầu từ 3×3 đến 6×6 đều đạt 7/7.

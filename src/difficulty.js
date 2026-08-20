@@ -196,6 +196,70 @@
     };
   }
 
+  /* The escalation plan: grow to the tier's minimum, widen the search, add a
+   * row, then add a column. Shared by the main thread and the worker so both
+   * escalate identically. */
+  function plan(level, key) {
+    var tpl = TEMPLATES[key];
+    var c0 = Math.max(level.cols, tpl.minCols || 2);
+    var r0 = Math.max(level.rows, tpl.minRows || 2);
+    var steps = [
+      { cols: c0, rows: r0, tries: 8, label: c0 + '×' + r0 },
+      { cols: c0, rows: r0, tries: 16, label: c0 + '×' + r0 + ', tìm rộng hơn' }
+    ];
+    if (r0 < 9) steps.push({ cols: c0, rows: r0 + 1, tries: 12, label: c0 + '×' + (r0 + 1) + ', thêm 1 hàng' });
+    if (c0 < 9 && r0 < 9) steps.push({ cols: c0 + 1, rows: r0 + 1, tries: 12, label: (c0 + 1) + '×' + (r0 + 1) });
+    return steps;
+  }
+
+  function blankAt(level, cols, rows) {
+    var out = JSON.parse(JSON.stringify(level));
+    out.cols = cols; out.rows = rows; out.pad = E.REV;
+    out.grid = [];
+    for (var c = 0; c < cols; c++) {
+      out.grid[c] = [];
+      for (var r = 0; r < rows; r++) out.grid[c][r] = 'yellow';
+    }
+    return out;
+  }
+
+  /* Yield-free single-candidate fit. */
+  function fitSyncOnce(level, key, palette, seed, runs) {
+    var tpl = TEMPLATES[key];
+    var args = buildArgs(level, key, palette, seed);
+    var lv = G.generate(args);
+    var cand = JSON.parse(JSON.stringify(level));
+    cand.grid = lv.grid; cand.pad = lv.pad;
+    if (!E.validate(cand).ok) return null;
+    var probe = T.measure(cand, Math.max(240, Math.round(runs / 2)));
+    if (!probe.valid || !probe.practicalOpt) return null;
+    cand.moves = Math.max(1, Math.ceil(probe.practicalOpt * tpl.build.slack));
+    var r = refineBudget(cand, key, runs);
+    var m = r.measure;
+    return { level: r.level, measure: m, distance: distance(r.level, m, key), check: check(r.level, m, key), seed: seed };
+  }
+
+  /* Whole escalation, no yields. onStep(frac, text) is called synchronously. */
+  function fitOneSync(level, key, palette, seedBase, runs, onStep) {
+    var steps = plan(level, key), best = null, log = [];
+    for (var si = 0; si < steps.length; si++) {
+      var st = steps[si];
+      var probe = blankAt(level, st.cols, st.rows);
+      for (var i = 0; i < st.tries; i++) {
+        var res = fitSyncOnce(probe, key, palette, seedBase + si * 131 + i * 31, runs);
+        if (res && (!best || res.distance < best.distance)) best = res;
+        if (onStep) {
+          onStep((si + (i + 1) / st.tries) / steps.length,
+                 'bước ' + (si + 1) + '/' + steps.length + ' · ' + st.label + ' · bàn thử ' + (i + 1) + '/' + st.tries);
+        }
+        if (best && best.check.pass === best.check.total) break;
+      }
+      log.push(st.label + ': ' + (best ? best.check.pass + '/' + best.check.total : 'không sinh được'));
+      if (best && best.check.pass === best.check.total) break;
+    }
+    return { best: best, log: log, steps: steps.length };
+  }
+
   /* Build several candidates and keep the one that lands closest to the tier.
    * One generated board is a coin flip; a small search is not.
    *
@@ -302,7 +366,8 @@
   global.Difficulty = {
     TEMPLATES: TEMPLATES, LABELS: LABELS,
     check: check, distance: distance, classify: classify,
-    buildArgs: buildArgs, fit: fit, rebudget: rebudget, refineBudget: refineBudget,
+    buildArgs: buildArgs, fit: fit, plan: plan, fitSyncOnce: fitSyncOnce, fitOneSync: fitOneSync,
+    rebudget: rebudget, refineBudget: refineBudget,
     sizeWarning: sizeWarning, toJSON: toJSON, load: load
   };
 })(typeof self !== 'undefined' ? self : this);
