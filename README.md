@@ -193,7 +193,13 @@ Những ván "không về đích dù budget vô hạn" trong report là player b
 
 ## Phím tắt
 
-`1`-`9` tap cột · `r` restart · `u`/`z` undo · `h` hint · `←`/`→` đổi level
+`1`-`9` tap cột · `r` restart · `u`/`z` undo · `h` hint · `b` ẩn/hiện puzzle · `←`/`→` đổi level
+
+## Ẩn/hiện puzzle
+
+Nút **Ẩn puzzle** thu khung bàn lại để bảng số và chart dùng hết chiều ngang — hữu ích khi đọc report Playtest hoặc curve.
+
+Thuần hiển thị, không chạm engine: state, move count, cột đã khoá đều giữ nguyên, và tap cột trong lúc ẩn vẫn tính nước bình thường. Hình học bàn tính từ kích thước thật của khung nên khi ẩn mọi lệnh vẽ bị hoãn lại, hiện lên thì vẽ lại đúng.
 
 ## Git
 

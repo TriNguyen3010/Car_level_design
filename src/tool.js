@@ -52,6 +52,22 @@
     s.pad.shape = (rnd() * MAX) | 0;
   }
 
+  var boardVisible = true;
+  var pendingRender = false;
+
+  function drawBoard() {
+    if (!state) return;
+    if (!boardVisible) { pendingRender = true; return; }
+    renderer.render(state);
+  }
+
+  function setBoardVisible(v) {
+    boardVisible = v;
+    document.body.classList.toggle('board-hidden', !v);
+    $('boardToggle').textContent = v ? 'Ẩn puzzle' : 'Hiện puzzle';
+    if (v && pendingRender) { pendingRender = false; renderer.render(state); }
+  }
+
   function loadLevel(i) {
     if (i < 0 || i >= levels.length) return;
     idx = i;
@@ -72,7 +88,7 @@
     stage.className = 'stage theme-' + (level().theme || 'city');
     stage.appendChild(resultNode);
     continuesUsed = 0;
-    renderer.render(state);
+    drawBoard();
     showResult();
     renderTop();
     renderEditor();
@@ -87,6 +103,13 @@
     if (history.length > 200) history.shift();
     var ev = E.applyMove(state, c);
     if (!ev) return;
+    if (!boardVisible) {
+      pendingRender = true;
+      renderTop();
+      logMoves(ev);
+      showResult();
+      return;
+    }
     busy = true;
     renderer.animateMove(state, ev, function () {
       setTimeout(function () { busy = false; }, F.get('inputLock'));
@@ -104,7 +127,7 @@
     state = history.pop();
     assignShapes(state, (level().id != null ? level().id : idx + 1) * 7919 + level().cols);
     stage.classList.remove('won', 'lost');
-    renderer.render(state);
+    drawBoard();
     hideResult();
     renderTop();
     logMoves();
@@ -300,7 +323,7 @@
     state.movesLeft += extra;
     state.status = 'playing';
     stage.classList.remove('lost');
-    renderer.render(state);
+    drawBoard();
     renderTop();
     logMoves();
     hideResult();
@@ -1399,8 +1422,8 @@
           var v = parseFloat(input.value);
           F.set(key, v);
           out.textContent = v + unit;
-          if (key === 'carScale' || key === 'cellGap' || key === 'shadowStrength') {
-            if (state) renderer.render(state);
+          if (key === 'carScale' || key === 'cellGap' || key === 'shadowStrength' || key === 'shapeCount') {
+            drawBoard();
           }
           syncFeelJson();
         });
@@ -1614,6 +1637,7 @@
   });
   $('modeToggle').addEventListener('click', function () { setMode(mode === 'test' ? 'design' : 'test'); });
   $('helpGuide').addEventListener('click', function () { showGuide(true); });
+  $('boardToggle').addEventListener('click', function () { setBoardVisible(!boardVisible); });
   $('tplScope').addEventListener('change', function () {
     $('tplRange').style.display = this.value === 'range' ? '' : 'none';
     if (!(+$('tplTo').value > 0) || +$('tplTo').value > levels.length) $('tplTo').value = levels.length;
@@ -1651,16 +1675,16 @@
   $('edTheme').addEventListener('change', function () { level().theme = this.value; loadLevel(idx); });
   $('genBtn').addEventListener('click', generateInto);
 
-  $('feelPreset').addEventListener('change', function () { F.applyPreset(this.value); renderFeel(); if (state) renderer.render(state); });
-  $('feelReset').addEventListener('click', function () { F.reset(); renderFeel(); if (state) renderer.render(state); });
+  $('feelPreset').addEventListener('change', function () { F.applyPreset(this.value); renderFeel(); drawBoard(); });
+  $('feelReset').addEventListener('click', function () { F.reset(); renderFeel(); drawBoard(); });
   $('sfxOn').addEventListener('change', function () { F.set('sfxOn', this.checked ? 1 : 0); syncFeelJson(); });
   $('useSprites').addEventListener('change', function () {
     F.set('sprites', this.checked ? 1 : 0);
     syncFeelJson();
-    if (state) renderer.render(state);
+    drawBoard();
   });
   $('feelLoad').addEventListener('click', function () {
-    try { F.load(JSON.parse($('feelJson').value)); renderFeel(); if (state) renderer.render(state); }
+    try { F.load(JSON.parse($('feelJson').value)); renderFeel(); drawBoard(); }
     catch (e) { global.Modal.alert('Feel JSON lỗi', e.message); }
   });
   $('feelCopy').addEventListener('click', function () { $('feelJson').select(); document.execCommand('copy'); });
@@ -1716,6 +1740,7 @@
     else if (e.key === 'r') restart();
     else if (e.key === 'u' || e.key === 'z') undo();
     else if (e.key === 'h') hint();
+    else if (e.key === 'b' || e.key === 'B') setBoardVisible(!boardVisible);
     else if (e.key === 'ArrowLeft') { loadLevel(idx - 1); renderSetTable(); }
     else if (e.key === 'ArrowRight') { loadLevel(idx + 1); renderSetTable(); }
   });
@@ -1723,7 +1748,7 @@
   var rt = null;
   window.addEventListener('resize', function () {
     clearTimeout(rt);
-    rt = setTimeout(function () { if (state) renderer.render(state); }, 120);
+    rt = setTimeout(drawBoard, 120);
   });
 
   fetch('src/tool.js', { method: 'HEAD', cache: 'no-store' }).then(function (r) {
@@ -1739,13 +1764,14 @@
   renderTemplates();
   renderBanner();
   setMode('test');
+  setBoardVisible(true);
   loadLevel(0);
   showGuide(false);
 
   /* Sprites arrive asynchronously; redraw once they do. */
   if (global.Sprites) {
     global.Sprites.load().then(function (n) {
-      if (n && state) renderer.render(state);
+      if (n) drawBoard();
       if (n) note(n + ' kiểu dáng xe đã nạp');
     });
   }
