@@ -4,10 +4,11 @@
   'use strict';
 
   var E = global.Engine, S = global.Solver, G = global.Gen, F = global.Feel;
-  var PT = global.Playtest, T = global.Tuner;
+  var PT = global.Playtest, T = global.Tuner, DF = global.Difficulty;
   var REV = 'REV';
 
   var PALETTE = Object.assign({}, global.LevelData.palette);
+  var DEFAULT_TEMPLATES = global.Difficulty.toJSON();
   var levels = JSON.parse(JSON.stringify(global.LevelData.levels));
   var idx = 0;
   var state = null;
@@ -503,6 +504,109 @@
     f.forEach(function (x) { el('div', 'flag ' + x[0], box, x[1]); });
   }
 
+  /* ---------------- difficulty templates ---------------- */
+
+  function renderTemplates() {
+    var box = clear($('tplCards'));
+    var m = lastMeasure;
+    var L = level();
+
+    if (m && m.valid) {
+      var best = DF.classify(L, m);
+      $('tplNow').innerHTML = 'Level này gần nhất với <b>' + best.name + '</b> (lệch ' +
+        best.distance.toFixed(2) + ' — 0 là nằm trong mọi dải)';
+    } else {
+      $('tplNow').textContent = 'bấm Đo / Muốn khó hơn để có số so sánh';
+    }
+
+    Object.keys(DF.TEMPLATES).forEach(function (key) {
+      var tpl = DF.TEMPLATES[key];
+      var chk = m && m.valid ? DF.check(L, m, key) : null;
+      var warn = DF.sizeWarning(L, key);
+      var card = el('div', 'tpl' + (chk && chk.pass === chk.total ? ' match' : ''), box);
+
+      var head = el('div', 'tpl-head', card);
+      el('span', 'tpl-name', head, tpl.name);
+      el('span', 'tpl-axis', head, 'trục: ' + tpl.axis);
+      if (chk) {
+        el('span', 'badge ' + (chk.pass === chk.total ? 'good' : chk.pass >= chk.total - 2 ? 'warn' : 'bad'),
+           head, chk.pass + '/' + chk.total + ' tiêu chí');
+      }
+      el('span', 'grow', head).style.flex = '1';
+
+      var apply = el('button', 'primary', head, 'Áp dụng');
+      apply.addEventListener('click', function () { fitTemplate(key); });
+      var reb = el('button', null, head, 'Chỉ đặt lại budget');
+      reb.title = 'Giữ nguyên lưới, chỉ đặt budget theo slack của tier';
+      reb.addEventListener('click', function () { rebudgetTemplate(key); });
+
+      el('div', 'tpl-body', card).innerHTML = tpl.focus;
+      el('div', 'tpl-body', card).innerHTML = tpl.why;
+      el('div', 'tpl-when', card, 'Dùng cho: ' + tpl.when +
+        '  ·  tối thiểu ' + (tpl.minCols || 2) + '×' + (tpl.minRows || 2));
+
+      var knobs = el('div', 'tpl-knobs', card);
+      var b = tpl.build;
+      [['số màu / số cột', b.colorRatio.toFixed(2)],
+       ['mật độ xe lạ', Math.round(b.strayDensity * 100) + '%'],
+       ['xe ẩn', Math.round(b.hiddenRatio * 100) + '%'],
+       ['slack', b.slack.toFixed(2) + 'x']].forEach(function (kv) {
+        el('span', 'knob', knobs).innerHTML = kv[0] + ' <b>' + kv[1] + '</b>';
+      });
+
+      if (warn) el('div', 'flag warn', card, warn).style.marginTop = '8px';
+
+      if (chk) {
+        var cbox = el('div', 'tpl-check', card);
+        chk.rows.forEach(function (r) {
+          var row = el('div', 'crit', cbox);
+          el('span', r.ok ? 'y' : 'm', row, r.ok ? '✓' : '✗');
+          el('span', 'lbl', row, r.label);
+          el('span', null, row, r.value);
+          el('span', 'band', row, 'cần ' + r.band);
+        });
+      }
+    });
+    $('tplJson').value = JSON.stringify(DF.toJSON(), null, 2);
+  }
+
+  function fitTemplate(key) {
+    var v = E.validate(level());
+    if (!v.ok) { note('level chưa hợp lệ'); return; }
+    var warn = DF.sizeWarning(level(), key);
+    if (warn && !confirm(warn + '\n\nVẫn sinh thử?')) return;
+    Array.prototype.forEach.call($('tplCards').querySelectorAll('button'), function (b) { b.disabled = true; });
+    DF.fit(level(), key, PALETTE, {
+      tries: +$('tplTries').value || 8,
+      runs: 600,
+      seed: +$('tplSeed').value || 1
+    }, function (i, n) { $('tplProgress').textContent = i + '/' + n; },
+    function (best) {
+      $('tplProgress').textContent = '';
+      if (!best) { note('không sinh được bàn hợp lệ cho tier này'); renderTemplates(); return; }
+      applyLevelChange(best.level, 'template ' + DF.TEMPLATES[key].name);
+      lastMeasure = best.measure;
+      renderTunerScore(best.measure);
+      renderTemplates();
+      var c = best.check;
+      note('template ' + DF.TEMPLATES[key].name + ': đạt ' + c.pass + '/' + c.total +
+           ' tiêu chí, budget ' + best.level.moves +
+           (c.pass < c.total ? ' — lệch: ' + c.rows.filter(function (r) { return !r.ok; })
+              .map(function (r) { return r.label + ' ' + r.value; }).join(', ') : ''));
+    });
+  }
+
+  function rebudgetTemplate(key) {
+    var m = lastMeasure && lastMeasure.valid ? lastMeasure : T.measure(level(), 600);
+    var r = DF.refineBudget(JSON.parse(JSON.stringify(level())), key, 600, m);
+    if (!r) { note('không đo được lời giải để đặt budget'); return; }
+    applyLevelChange(r.level, 'budget theo ' + DF.TEMPLATES[key].name + ' → ' + r.level.moves);
+    lastMeasure = r.measure;
+    renderTunerScore(r.measure);
+    renderTemplates();
+    note('budget → ' + r.level.moves + ' (win trung bình ' + pct(r.measure.winAvg) + ')');
+  }
+
   /* ---------------- difficulty tuner ---------------- */
 
   var lastMeasure = null;
@@ -531,9 +635,10 @@
 
   function measureCurrent() {
     var v = E.validate(level());
-    if (!v.ok) { lastMeasure = null; renderTunerScore(null); return null; }
+    if (!v.ok) { lastMeasure = null; renderTunerScore(null); renderTemplates(); return null; }
     lastMeasure = T.measure(level(), 900);
     renderTunerScore(lastMeasure);
+    renderTemplates();
     return lastMeasure;
   }
 
@@ -1147,6 +1252,18 @@
     }, 20);
   });
   $('modeToggle').addEventListener('click', function () { setMode(mode === 'test' ? 'design' : 'test'); });
+  $('tplLoad').addEventListener('click', function () {
+    try {
+      DF.load(JSON.parse($('tplJson').value));
+      renderTemplates();
+      note('đã nạp template');
+    } catch (e) { alert('template JSON lỗi: ' + e.message); }
+  });
+  $('tplReset').addEventListener('click', function () {
+    DF.load(DEFAULT_TEMPLATES);
+    renderTemplates();
+    note('template về mặc định');
+  });
   $('wantHarder').addEventListener('click', function () { askSuggestions('harder'); });
   $('wantEasier').addEventListener('click', function () { askSuggestions('easier'); });
   $('runPlaytest').addEventListener('click', runPlaytest);
@@ -1213,7 +1330,7 @@
       b.classList.add('on');
       document.querySelector('.panel[data-panel="' + b.dataset.tab + '"]').classList.add('on');
       if (b.dataset.tab === 'set') renderSetTable();
-      if (b.dataset.tab === 'tune' && !lastMeasure) measureCurrent();
+      if (b.dataset.tab === 'tune') { if (!lastMeasure) measureCurrent(); else renderTemplates(); }
     });
   });
 
@@ -1241,6 +1358,7 @@
 
   renderBrushes();
   renderFeel();
+  renderTemplates();
   renderBanner();
   setMode('test');
   loadLevel(0);

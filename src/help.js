@@ -161,6 +161,24 @@
       note: 'Đây KHÔNG phải thế cờ chết. Xem mục "Game không có ngõ cụt". Trần thấp là tín hiệu level dễ làm player thật thấy bế tắc dù vẫn còn cửa thắng — đáng lo không kém gì thua thật.'
     },
 
+    'template': {
+      title: 'Template độ khó',
+      body: 'Mỗi tier là một <b>mục tiêu viết bằng đúng các knob đang có</b> — số màu trên số cột, mật độ xe lạ, tỉ lệ xe ẩn, slack — cộng với dải số mà level phải rơi vào mới được tính là tier đó. Nên template nào cũng đọc được, phản biện được, sửa được (mở phần "Sửa template (JSON)").',
+      list: [
+        '<b>Áp dụng</b> — sinh thử nhiều bàn theo knob của tier, giữ bàn rơi gần dải mục tiêu nhất. Mỗi bàn đều được playtest thật.',
+        '<b>Chỉ đặt lại budget</b> — giữ nguyên lưới a đã vẽ, chỉ dò budget trong dải slack của tier cho tới khi win rate vào dải.',
+        '<b>x/7 tiêu chí</b> — level hiện tại đạt bao nhiêu dải của tier đó.'
+      ],
+      example:
+        'Mỗi tier tì vào MỘT trục. Bốn tier cùng "khó" theo một kiểu\n' +
+        'thì chỉ là một level lặp lại bốn lần.\n\n' +
+        '  Tập lái       không trục nào  — dạy luật\n' +
+        '  Giờ cao điểm  budget          — thua vì tiêu move phí\n' +
+        '  Bãi chật      định tuyến      — thua vì chọn cột sai\n' +
+        '  Giờ đêm       thiếu thông tin — cộng dồn cả ba',
+      note: 'Đo trên 14 bàn từ 4×5 đến 6×6: <b>Bãi chật không khó hơn Giờ cao điểm</b> — win của player trung bình gần y hệt, chỉ độ sâu là khác. Thang độ khó thật là Tập lái → Giờ cao điểm ≈ Bãi chật → Giờ đêm; thang độ sâu là Tập lái → Giờ cao điểm → Bãi chật ≈ Giờ đêm. Xen kẽ hai tier giữa để đổi vị, đừng coi là hai bậc.'
+    },
+
     'no-dead-end': {
       title: 'Game không có ngõ cụt',
       body: 'Em kiểm tra 134 thế cờ dở sau khi chơi ẩu trên 4 level: IDA* tìm ra lời giải cho <b>toàn bộ 134 thế</b>, không thế nào bị tuyên bố vô nghiệm.',

@@ -34,6 +34,30 @@ rồi vào `http://localhost:5173`. Không build step, không dependency.
 
 Auto-sort nằm trong `engine.js`, **không** nằm ở UI — nếu để ở UI thì solver sẽ đo sai.
 
+## Template độ khó (tab Tune)
+
+Bốn tier, mỗi tier **tì vào một trục khác nhau**. Bốn tier cùng khó theo một kiểu thì chỉ là một level lặp lại bốn lần.
+
+| Tier | Trục | Knob | win TB | Độ sâu | Bàn tối thiểu |
+|---|---|---|---|---|---|
+| **Tập lái** | không — dạy luật | màu=cột · lạ 14% · slack 3.0x | 95–100% | ≤14 | 3×3 |
+| **Giờ cao điểm** | sức ép budget | màu=cột · lạ 26% · slack 1.65x | 72–95% | ≤20 | 4×5 |
+| **Bãi chật** | độ sâu định tuyến | màu 0.6×cột · lạ 34% · slack 1.60x | 68–92% | ≥22 | 5×5 |
+| **Giờ đêm** | thiếu thông tin, cộng dồn | màu 0.6×cột · lạ 42% · **ẩn 24%** · slack 1.45x | 45–80% | ≥16 | 5×6 |
+
+**Bãi chật không khó hơn Giờ cao điểm** — đo trên 14 bàn từ 4×5 đến 6×6, win của player trung bình gần y hệt, chỉ độ sâu là khác. Nguyên nhân: ít màu hơn số cột cho player nhiều chỗ nhả xe đúng hơn nên bớt move phí, triệt tiêu phần nào sức ép budget. Thang độ khó thật là **Tập lái → Giờ cao điểm ≈ Bãi chật → Giờ đêm**; thang độ sâu là **Tập lái → Giờ cao điểm → Bãi chật ≈ Giờ đêm**. Xen kẽ hai tier giữa để đổi vị, đừng coi là hai bậc.
+
+Mỗi thẻ có:
+- **Áp dụng** — sinh thử N bàn theo knob của tier, playtest thật từng bàn, giữ bàn rơi gần dải mục tiêu nhất, rồi dò budget trong dải slack cho tới khi win rate vào dải.
+- **Chỉ đặt lại budget** — giữ nguyên lưới a đã vẽ, chỉ dò budget.
+- **x/7 tiêu chí** — level hiện tại đạt bao nhiêu dải, kèm giá trị thật vs dải cần.
+
+Dòng đầu cho biết level đang giống tier nào. Toàn bộ template nằm trong `src/difficulty.js` và sửa được ngay trong UI qua ô **Sửa template (JSON)**.
+
+Dải mục tiêu **đo ra chứ không đoán**: sinh 12 bàn cho mỗi spec trên 4 kích thước rồi lấy dải thực tế. Kiểm chứng lại: 14/14 trường hợp hợp lệ đạt 7/7.
+
+Bàn quá nhỏ so với tier thì tool cảnh báo — bàn ngắn thì lời giải ngắn, không đủ số nước để player kịp thua, siết knob nào cũng không tới dải.
+
 ## Cân chỉnh ở mức cao (tab Tune)
 
 Bấm **Muốn khó hơn** / **Muốn dễ hơn**. Tool dựng một level ứng viên cho từng đòn bẩy, **playtest thật từng cái**, rồi xếp theo tác động đo được. Không phỏng đoán.

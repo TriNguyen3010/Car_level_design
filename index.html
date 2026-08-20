@@ -63,6 +63,23 @@
         </div>
 
         <div class="panel" data-panel="tune">
+          <h3>Template độ khó <span class="help" data-help="template"></span></h3>
+          <div class="row">
+            <span class="hint" id="tplNow" style="margin:0">—</span>
+            <span class="grow" style="flex:1"></span>
+            <label style="min-width:0">seed</label>
+            <input type="number" id="tplSeed" value="1" style="width:60px">
+            <label style="min-width:0">số bàn thử</label>
+            <input type="number" id="tplTries" value="8" min="1" max="24" style="width:64px">
+            <span class="hint" id="tplProgress" style="margin:0"></span>
+          </div>
+          <div id="tplCards"></div>
+          <details style="margin-top:8px">
+            <summary class="hint" style="cursor:pointer">Sửa template (JSON)</summary>
+            <textarea id="tplJson" rows="14" spellcheck="false"></textarea>
+            <div class="row"><button id="tplLoad">Nạp JSON này</button><button id="tplReset">Về mặc định</button></div>
+          </details>
+
           <h3>Cân chỉnh độ khó <span class="help" data-help="do-kho"></span></h3>
           <div class="metrics" id="tunerScore"></div>
           <div class="row" style="margin-top:9px">
@@ -199,6 +216,7 @@
 <script src="src/gen.js"></script>
 <script src="src/playtest.js"></script>
 <script src="src/tuner.js"></script>
+<script src="src/difficulty.js"></script>
 <script src="src/feel.js"></script>
 <script src="src/render.js"></script>
 <script src="src/tool.js"></script>
