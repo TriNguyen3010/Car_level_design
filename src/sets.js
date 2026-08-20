@@ -42,8 +42,7 @@
       label: 'Dễ',
       intent:
         'Không ai được thua. Mỗi cơ chế mới xong thì hạ bậc cho player làm lại dễ.',
-      note:
-        'Nhịp đo trên player ẩu — bậc 1–4 player trung bình luôn 98–100%.',
+      note: '',
       rhythmOn: 'winSloppy',
       breathers: [6, 10],
       levels: [
@@ -74,8 +73,7 @@
       label: 'Trung',
       intent:
         'Độ khó có nhịp. Leo 2–3 level rồi thả 1. Level 10 không phải đỉnh.',
-      note:
-        'Chu kỳ 3, không phải 2: 10 level quá ngắn cho chu kỳ 2.',
+      note: '',
       rhythmOn: 'winAvg',
       breathers: [4, 8, 10],
       levels: [
@@ -106,8 +104,7 @@
       label: 'Khó',
       intent:
         'Lọc player đã quen thể loại. Đỉnh sớm ở level 3, kết đúng ở đỉnh.',
-      note:
-        'Chỗ nghỉ nông. Player ẩu xuống 7% ở level 10.',
+      note: '',
       rhythmOn: 'winAvg',
       breathers: [4, 7, 9],
       levels: [

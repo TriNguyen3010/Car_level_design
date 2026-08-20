@@ -62,8 +62,7 @@
         '  →  <b>' + (SET_WORD[key] || to.label) + '</b> (' + tierRange(key) + ')' +
         '<div class="flag warn" style="margin-top:9px">Mỗi bộ là một curve khác nhau, nên ' +
         '<b>sẽ chơi lại từ level 1</b>. Giữ số level cũ sẽ rơi vào giữa ramp của bộ mới.</div>' +
-        '<div style="margin-top:8px">' + (to.intent || '') + '</div>' +
-        (to.note ? '<div class="hint" style="margin-top:6px">' + to.note + '</div>' : ''),
+        '<div style="margin-top:8px">' + (to.intent || '') + '</div>',
       actions: [
         { label: 'Đổi và về level 1', primary: true, fn: function () { switchSet(key); } },
         { label: 'Ở lại bộ ' + (SET_WORD[currentSet] || from.label), fn: function () { renderSetPick(); } }
@@ -617,12 +616,10 @@
     if (!box) return;
     clear(box);
     var spec = setSpec();
-    if (!spec.intent) return;
+    if (!spec) return;
     var head = el('div', null, box);
-    el('span', 'nm', head, spec.name);
-    el('span', 'lb', head, spec.label + (spec.rhythmOn === 'winSloppy' ? ' · nhịp đo trên player ẩu' : ''));
-    el('div', 'txt', box).innerHTML = spec.intent;
-    if (spec.note) el('div', 'txt', box).innerHTML = spec.note;
+    el('span', 'nm', head, SET_WORD[currentSet] || spec.label);
+    el('span', 'lb', head, spec.name + (tiersOf(currentSet).some(Boolean) ? ' · ' + tierRange(currentSet) : ''));
     var seq = el('div', 'seq', box);
     var parts = levels.map(function (L, i) {
       var t = lockedTier[i] || tierOf[i] || L.tier;
@@ -912,8 +909,11 @@
   function renderCurveTab() {
     if (!SETS) return;
     var spec = setSpec();
-    $('curveWho').innerHTML = 'Bộ <b>' + (SET_WORD[currentSet] || spec.label) + '</b> — ' +
-      (spec.intent || '').replace(/<[^>]+>/g, '');
+    var nB = (spec.breathers || []).length;
+    var ts = tiersOf(currentSet).filter(Boolean);
+    $('curveWho').innerHTML = 'Bộ <b>' + (SET_WORD[currentSet] || spec.label) + '</b>' +
+      (ts.length ? ' · ' + tierRange(currentSet) : '') +
+      (nB ? ' · ' + nB + ' chỗ nghỉ chủ ý' : '');
     drawCompare();
     drawActive();
     drawLevels();

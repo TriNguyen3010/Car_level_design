@@ -169,7 +169,7 @@ Một bộ là một **cách tiếp cận**, không phải một độ dốc. M�
 | **Trung bình** (Nhịp) | `1 2 3 `**`2`**` 4 5 6 `**`5`**` 7 `**`6`** | Độ khó có nhịp. Leo 2–3 level rồi thả 1. Level 10 không phải đỉnh. |
 | **Khó** (Thử ngay) | `2 4 6 `**`5`**` 7 8 `**`7`**` 9 `**`8`**` 10` | Lọc player đã quen thể loại. Đỉnh sớm ở level 3, kết đúng ở đỉnh. |
 
-Text trong tool giữ **một dòng mỗi bộ** — tooltip và header panel không phải chỗ cho ba câu. Lý luận đầy đủ nằm ở đây, phần dưới.
+Trong tool, ý đồ chỉ xuất hiện ở **hộp thoại lúc đổi bộ** — đó là lúc người đọc đang chọn, nên đó là lúc cần lý do. Tab Độ khó không có đoạn văn nào: biểu đồ ở ngay dưới, chữ đặt cạnh biểu đồ chỉ cạnh tranh với nó và thua. Header tab chỉ ghi dữ kiện: `Bộ Dễ · bậc 1→4 · 2 chỗ nghỉ chủ ý`. Lý luận đầy đủ nằm ở README này.
 
 Số **đậm** là chỗ nghỉ chủ ý. Xu hướng đo được: **−4.41 / −2.15 / −4.89** điểm win mỗi level.
 

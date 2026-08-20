@@ -15,11 +15,9 @@ INTENT = {
     'medium': 'Độ khó có nhịp. Leo 2–3 level rồi thả 1. Level 10 không phải đỉnh.',
     'hard': 'Lọc player đã quen thể loại. Đỉnh sớm ở level 3, kết đúng ở đỉnh.',
 }
-NOTE = {
-    'easy': 'Nhịp đo trên player ẩu — bậc 1–4 player trung bình luôn 98–100%.',
-    'medium': 'Chu kỳ 3, không phải 2: 10 level quá ngắn cho chu kỳ 2.',
-    'hard': 'Chỗ nghỉ nông. Player ẩu xuống 7% ở level 10.',
-}
+# No per-campaign note. Explanatory text next to a chart competes with the chart
+# and loses — the Độ khó tab already shows the shape. The intent survives only in
+# the switch dialog, where the reader is actually choosing.
 RHYTHM = {'easy': 'winSloppy', 'medium': 'winAvg', 'hard': 'winAvg'}
 
 
@@ -93,8 +91,7 @@ for key, name, label in ORDER:
     out.append("      label: '%s'," % label)
     out.append("      intent:")
     out += js_string_block(INTENT[key], '        ')
-    out.append("      note:")
-    out += js_string_block(NOTE[key], '        ')
+    out.append("      note: '',")
     out.append("      rhythmOn: '%s'," % RHYTHM[key])
     out.append("      breathers: %s," % json.dumps(d['breathers']))
     out.append("      levels: [")
