@@ -287,12 +287,12 @@ Những ván "không về đích dù budget vô hạn" trong report là player b
 
 ## Thanh header
 
-Hai cột, hai hàng. Cột trái trả lời *"tôi đang ở đâu"*, cột phải là *"tôi làm được gì / nó đang thế nào"*.
+Hai hàng, mỗi hàng chia trái/phải. Hàng 1 là **lượt đang chơi**, hàng 2 là **bộ cấp độ và thông tin phụ**.
 
 | | trái | phải |
 |---|---|---|
-| hàng 1 | bộ cấp độ · chế độ | trạng thái · Hướng dẫn · build |
-| hàng 2 | ◀ Level ▶ · Moves · kích thước | Restart · Undo · Hint · Autoplay · Ẩn puzzle |
+| hàng 1 | ◀ Level ▶ · Moves · kích thước · Restart · Undo · Hint · Autoplay · Ẩn puzzle | chế độ |
+| hàng 2 | bộ cấp độ | trạng thái · Hướng dẫn · build |
 
 ## Phím tắt
 

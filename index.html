@@ -12,25 +12,9 @@
 </head>
 <body>
 <div id="app">
-  <!-- Two columns all the way down: left is "where am I", right is
-       "what can I do / what state is it in". -->
+  <!-- Row 1 is the run in progress, with the mode switch parked far right.
+       Row 2 is the campaign and the meta readouts. -->
   <div id="top">
-    <div class="hdr-row">
-      <div class="hdr-left">
-        <span class="sets" id="setPick"></span>
-        <span class="modes" id="modeSwitch">
-          <button data-mode="test" title="Chỉ chơi và đọc chỉ số, không sửa được gì">▶ Test</button>
-          <button data-mode="playtune" title="Chơi rồi nâng/hạ bậc ngay tại bàn, ghi nhật ký">🎮 Chơi &amp; cân</button>
-          <button data-mode="design" title="Sửa lưới, cân độ khó, game feel">⚙ Level Design</button>
-        </span>
-      </div>
-      <div class="hdr-right">
-        <span class="badge" id="statusBadge">playing</span>
-        <button id="helpGuide" title="Hướng dẫn nhanh">Hướng dẫn</button>
-        <span class="badge" id="buildStamp" title="thời điểm src/tool.js sửa lần cuối — dùng để biết browser đã nạp bản mới chưa">build …</span>
-      </div>
-    </div>
-
     <div class="hdr-row">
       <div class="hdr-left">
         <button id="prevLv" title="Level trước">◀</button>
@@ -39,14 +23,31 @@
         <span class="sep"></span>
         <span class="badge" id="movesBadge">Moves <b>0</b></span>
         <span class="badge" id="sizeBadge">4×4</span>
-      </div>
-      <div class="hdr-right">
+        <span class="sep"></span>
         <button id="restart">Restart</button>
         <button id="undo">Undo</button>
         <button id="hint">Hint</button>
         <button id="autoplay">Autoplay</button>
         <span class="sep"></span>
         <button id="boardToggle" title="Ẩn/hiện khung puzzle — chỉ là hiển thị, không ảnh hưởng logic (phím B)"></button>
+      </div>
+      <div class="hdr-right">
+        <span class="modes" id="modeSwitch">
+          <button data-mode="test" title="Chỉ chơi và đọc chỉ số, không sửa được gì">▶ Test</button>
+          <button data-mode="playtune" title="Chơi rồi nâng/hạ bậc ngay tại bàn, ghi nhật ký">🎮 Chơi &amp; cân</button>
+          <button data-mode="design" title="Sửa lưới, cân độ khó, game feel">⚙ Level Design</button>
+        </span>
+      </div>
+    </div>
+
+    <div class="hdr-row">
+      <div class="hdr-left">
+        <span class="sets" id="setPick"></span>
+      </div>
+      <div class="hdr-right">
+        <span class="badge" id="statusBadge">playing</span>
+        <button id="helpGuide" title="Hướng dẫn nhanh">Hướng dẫn</button>
+        <span class="badge" id="buildStamp" title="thời điểm src/tool.js sửa lần cuối — dùng để biết browser đã nạp bản mới chưa">build …</span>
       </div>
     </div>
   </div>
