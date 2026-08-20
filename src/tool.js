@@ -64,8 +64,10 @@
   function setBoardVisible(v) {
     boardVisible = v;
     document.body.classList.toggle('board-hidden', !v);
-    $('boardToggle').textContent = v ? 'Ẩn puzzle' : 'Hiện puzzle';
-    if (v && pendingRender) { pendingRender = false; renderer.render(state); }
+    $('boardToggle').textContent = v ? '👁 Ẩn puzzle' : '🙈 Hiện puzzle';
+    /* Always redraw on reveal, not only when a draw was queued: the stage box
+     * changed while it was collapsed, so the old geometry is stale either way. */
+    if (v) { pendingRender = false; if (state) renderer.render(state); }
   }
 
   function loadLevel(i) {
@@ -1744,6 +1746,11 @@
     else if (e.key === 'ArrowLeft') { loadLevel(idx - 1); renderSetTable(); }
     else if (e.key === 'ArrowRight') { loadLevel(idx + 1); renderSetTable(); }
   });
+
+  /* The first render can land before fonts and layout settle, which leaves the
+   * board measured against a stale box until something triggers a resize. */
+  requestAnimationFrame(function () { requestAnimationFrame(drawBoard); });
+  window.addEventListener('load', drawBoard);
 
   var rt = null;
   window.addEventListener('resize', function () {
