@@ -26,6 +26,7 @@
     <button id="autoplay">Autoplay</button>
     <span class="grow"></span>
     <span class="badge" id="statusBadge">playing</span>
+    <span class="badge" id="buildStamp" title="thời điểm src/tool.js được sửa lần cuối — dùng để biết browser đã nạp bản mới chưa">build …</span>
     <button id="modeToggle" class="primary" title="Đổi giữa chơi thử và chỉnh sửa"></button>
   </div>
 
@@ -54,6 +55,7 @@
             <button class="primary" id="analyzePlay">Đo level này</button>
             <span class="hint" id="analyzePlayNote" style="margin:0">chạy solver + playtest nhanh để xem chỉ số</span>
           </div>
+          <div class="flag" id="modeHint" style="margin-bottom:10px"></div>
           <h3>Level hiện tại</h3>
           <div class="metrics" id="playMetrics"></div>
           <h3>Đọc số thế nào</h3>
@@ -208,17 +210,19 @@
   </div>
 </div>
 
-<script src="src/help.js"></script>
-<script src="src/sprites.js"></script>
-<script src="src/engine.js"></script>
-<script src="src/levels.js"></script>
-<script src="src/solver.js"></script>
-<script src="src/gen.js"></script>
-<script src="src/playtest.js"></script>
-<script src="src/tuner.js"></script>
-<script src="src/difficulty.js"></script>
-<script src="src/feel.js"></script>
-<script src="src/render.js"></script>
-<script src="src/tool.js"></script>
+<script>
+/* Dev tool: every module is written with a cache-busting token. Chrome keeps
+   src/*.js in the per-tab memory cache even when the server says no-store, and
+   a stale module presents as "my change did not show up". document.write keeps
+   the load order, which plain dynamic injection would not. */
+(function () {
+  var t = Date.now();
+  [ 'help', 'sprites', 'engine', 'levels', 'solver', 'gen', 'playtest',
+    'tuner', 'difficulty', 'feel', 'render', 'tool'
+  ].forEach(function (m) {
+    document.write('<script src="src/' + m + '.js?t=' + t + '"><\/script>');
+  });
+})();
+</script>
 </body>
 </html>

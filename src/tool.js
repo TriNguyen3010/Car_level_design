@@ -199,6 +199,15 @@
   function setMode(m) {
     mode = m;
     document.body.dataset.mode = m;
+    var hint = $('modeHint');
+    if (hint) {
+      hint.className = 'flag ' + (m === 'test' ? 'warn' : 'good');
+      hint.innerHTML = m === 'test'
+        ? 'Đang ở <b>Test</b> — chỉ chơi và đọc chỉ số. Sửa lưới, 4 template độ khó, ' +
+          'cân độ khó và game feel nằm sau nút <b>⚙ Level Design</b> ở góc phải trên.'
+        : 'Đang ở <b>Level Design</b> — đủ 6 tab. <b>Tune</b> có 4 template độ khó và ' +
+          'gợi ý khó/dễ hơn, <b>Edit</b> vẽ lưới, <b>Feel</b> tinh chỉnh animation và kiểu dáng xe.';
+    }
     var btn = $('modeToggle');
     btn.textContent = m === 'test' ? '⚙ Level Design' : '▶ Test';
     btn.title = m === 'test'
@@ -1355,6 +1364,14 @@
     clearTimeout(rt);
     rt = setTimeout(function () { if (state) renderer.render(state); }, 120);
   });
+
+  fetch('src/tool.js', { method: 'HEAD', cache: 'no-store' }).then(function (r) {
+    var t = r.headers.get('Last-Modified');
+    var d = t ? new Date(t) : null;
+    $('buildStamp').textContent = 'build ' + (d
+      ? d.toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
+      : '?');
+  }).catch(function () { $('buildStamp').textContent = 'build ?'; });
 
   renderBrushes();
   renderFeel();

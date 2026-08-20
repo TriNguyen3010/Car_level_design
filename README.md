@@ -8,6 +8,12 @@ python3 tools/serve.py 5173
 
 rồi vào `http://localhost:5173`. Không build step, không dependency.
 
+**Dùng `tools/serve.py`, đừng dùng `python3 -m http.server`** — bản mặc định để Chrome cache `src/*.js` sau khi sửa file, và cái đó hiện ra y hệt "sửa xong mà không thấy đổi gì".
+
+Góc trái trên có badge **build hh:mm dd-mm** = thời điểm `src/tool.js` sửa lần cuối. Số đó không khớp với lần sửa gần nhất thì browser đang chạy bản cũ.
+
+**Mở ra là chế độ Test — chỉ có 3 tab.** Bấm **⚙ Level Design** góc phải trên mới ra Tune (4 template độ khó + gợi ý khó/dễ), Edit (vẽ lưới), Feel (animation + kiểu dáng xe).
+
 ## Luật game (như code đang implement)
 
 - `grid[col][row]`, **row 0 = đỉnh cột**.
