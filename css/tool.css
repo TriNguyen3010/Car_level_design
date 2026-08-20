@@ -451,3 +451,41 @@ body[data-mode="design"] #top { box-shadow: inset 0 2px 0 var(--warn); }
 /* ---------- collapse the board to read the panels full width ---------- */
 body.board-hidden #boardWrap { display: none; }
 body.board-hidden #side { flex: 1; }
+
+/* ---------- 3-way mode switch ---------- */
+.modes { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.modes button { border: 0; border-radius: 0; background: transparent; padding: 5px 11px; font-weight: 600; }
+.modes button + button { border-left: 1px solid var(--line); }
+.modes button.on { background: var(--accent); color: #fff; }
+body[data-mode="playtune"] .modes button.on { background: #7a52d0; }
+body[data-mode="design"] .modes button.on { background: var(--warn); color: #1b1d24; }
+
+body[data-mode="test"] .design-only,
+body[data-mode="test"] .playtune-only,
+body[data-mode="playtune"] .design-only,
+body[data-mode="design"] .playtune-only { display: none !important; }
+body[data-mode="playtune"] #top { box-shadow: inset 0 2px 0 #7a52d0; }
+
+/* ---------- play & tune strip ---------- */
+#playtuneBar:empty { display: none; }
+#playtuneBar {
+  display: flex; align-items: center; gap: 9px; flex-wrap: wrap;
+  padding: 8px 12px; background: rgba(122,82,208,.14); border-bottom: 1px solid #7a52d0;
+}
+#playtuneBar .grow { flex: 1; }
+#playtuneBar .tierNow { font-size: 15px; font-weight: 700; }
+#playtuneBar .est { color: var(--ink-dim); font-size: 12px; }
+#playtuneBar button.lock { background: #3f9c5a; border-color: #3f9c5a; color: #fff; font-weight: 700; }
+.tierPill {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 24px; height: 22px; padding: 0 6px; border-radius: 6px;
+  background: var(--panel-2); border: 1px solid var(--line); font-variant-numeric: tabular-nums;
+}
+.tierPill.set { background: #3f9c5a; border-color: #3f9c5a; color: #fff; font-weight: 700; }
+
+.jrow { display: grid; grid-template-columns: 58px 44px 1fr 78px 96px; gap: 7px;
+        align-items: center; padding: 4px 0; border-bottom: 1px solid var(--line);
+        font-size: 12px; font-variant-numeric: tabular-nums; }
+.jrow.win .oc { color: var(--good); }
+.jrow.lose .oc { color: var(--bad); }
+.jrow .dim { color: var(--ink-dim); }

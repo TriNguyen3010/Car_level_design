@@ -46,21 +46,28 @@ Auto-sort nằm trong `engine.js`, **không** nằm ở UI — nếu để ở U
 
 ## Template độ khó (tab Tune)
 
-Bốn bậc, **Độ 1 dễ nhất đến Độ 4 khó nhất**. Mỗi bậc tì vào **một trục khác nhau** — bốn bậc cùng khó theo một kiểu thì chỉ là một level lặp bốn lần.
+**Thang 10 bậc**, bậc 1 dễ nhất đến bậc 10 khó nhất. Bốn tên cũ thành **nhóm**, cho biết bậc đó khó theo kiểu gì.
 
-| Bậc | Trục | Knob | win TB | win ẩu | Độ sâu | Bàn tối thiểu |
-|---|---|---|---|---|---|---|
-| **Độ 1 · Tập lái** | dạy luật | màu=cột · lạ 14% · slack 3.00x | 95–100% | 72–100% | ≤14 | 3×3 |
-| **Độ 2 · Giờ cao điểm** | sức ép budget | màu=cột · lạ 26% · slack 1.65x | 80–95% | 28–72% | ≤20 | 4×5 |
-| **Độ 3 · Bãi chật** | độ sâu định tuyến | màu 0.6×cột · lạ 34% · slack 1.42x | 62–80% | 18–60% | ≥22 | 5×5 |
-| **Độ 4 · Giờ đêm** | thiếu thông tin | màu 0.6×cột · lạ 42% · **ẩn 24%** · slack 1.28x | 35–62% | 0–35% | ≥16 | 5×6 |
+| Bậc | Nhóm | màu/cột | xe lạ | ẩn | slack | win TB | win ẩu | bàn tối thiểu |
+|---|---|---|---|---|---|---|---|---|
+| 1 | Tập lái | 1.00 | 12% | 0 | 3.20x | 92–100% | 77–100% | 3×3 |
+| 2 | Tập lái | 1.00 | 20% | 0 | 2.10x | 91–100% | 53–89% | 3×3 |
+| 3 | Giờ cao điểm | 1.00 | 26% | 0 | 1.72x | 89–100% | 42–78% | 4×5 |
+| 4 | Giờ cao điểm | 1.00 | 30% | 0 | 1.56x | 85–99% | 23–59% | 4×5 |
+| 5 | Giờ cao điểm | 1.00 | 36% | 0 | 1.44x | 80–94% | 22–58% | 4×5 |
+| 6 | Bãi chật | 0.62 | 38% | 0 | 1.34x | 75–89% | 22–58% | 5×5 |
+| 7 | Bãi chật | 0.60 | 42% | 0 | 1.26x | 71–85% | 21–57% | 5×5 |
+| 8 | Bãi chật | 0.60 | 46% | 0 | 1.20x | 64–78% | 14–50% | 5×5 |
+| 9 | Giờ đêm | 0.60 | 44% | 18% | 1.15x | 50–64% | 8–44% | 5×6 |
+| 10 | Giờ đêm | 0.60 | 48% | 26% | 1.10x | 44–58% | 5–41% | 5×6 |
 
-Dải win **không chồng nhau**, nên số 1→4 là thứ tự độ khó thật. Nhưng để được vậy phải siết slack ở hai bậc trên:
+Mọi con số **đo ra**: sinh 3 bàn ở mỗi kích thước trong 4 kích thước cho từng bậc rồi playtest. Win trung vị của player trung bình xuống đơn điệu **100 · 99 · 97 · 93 · 88 · 83 · 79 · 72 · 58 · 52**. Kiểm chứng lại: 40/40 (10 bậc × 4 kích thước) đạt 7/7 tiêu chí.
 
-- Độ 3 ở slack 1.60 đo ra win TB **83–98%** — ngang hệt Độ 2, tức sâu hơn mà **không** khó hơn. Phải về 1.42.
-- Độ 4 ở slack 1.45 đo ra **70–98%** — không khó hơn Độ 3. Phải về 1.28.
+Hai điều hình dạng curve đó nói cho level design:
 
-Bài học: **gộp màu và siết budget trừ nhau, không cộng.** Ít màu hơn số cột cho player nhiều chỗ nhả xe đúng hơn nên tự động bớt move phí. Đừng chồng hai thứ mà mong cộng dồn.
+**Bậc 1–4 gần như không làm player trung bình thua** (100 → 93) nhưng **cắt một nửa player ẩu** (94 → 40). Độ khó đầu game là chuyện phạt sự lơ đễnh, không phải chuyện kỹ năng.
+
+**Budget gánh cả cái thang.** Hạ số màu xuống dưới số cột ở bậc 6 làm level **sâu hơn nhưng hơi dễ hơn** — nhiều cột nhận được xe trên pad hơn nên bớt move phí. Đo trực tiếp: ở slack 1.48 bậc 6 ra dễ hơn bậc 5. Nên slack phải tiếp tục siết qua khúc chuyển đó, không thì thang đứng lại. **Gộp màu và siết budget trừ nhau, không cộng.**
 
 ### Phạm vi áp dụng
 
@@ -139,19 +146,51 @@ Mọi chỉ số đều có dấu <b>?</b> bấm được, mở ra giải thích
 
 `choice` là dial độ khó chính, không phải grid size. Cách tăng nó: **đặt số màu ít hơn số cột** — khi 2 cột cùng màu thì player phải chọn cột nào để nhả xe.
 
-## Hai chế độ
+## Ba chế độ
 
-Tool mở ra ở **Test**. Bấm **⚙ Level Design** ở góc phải trên để vào chế độ chỉnh sửa, bấm **▶ Test** để quay lại.
+Chuyển bằng nhóm nút góc phải trên. Tool mở ra ở **Test**.
 
-| | Test | Level Design |
-|---|---|---|
-| Tab | Play · Playtest · Level Set | thêm Tune · Edit · Feel |
-| Level Set | chỉ xem bảng + curve | thêm +Level / Duplicate / Delete / Export / Import |
-| Sửa được level | không | có |
+| | ▶ Test | 🎮 Chơi & cân | ⚙ Level Design |
+|---|---|---|---|
+| Mục tiêu | chơi và đọc chỉ số | thẩm định bậc bằng tay chơi | sửa lưới, cân bằng bảng số |
+| Tab | Play · Playtest · Level Set | thêm **Nhật ký** | thêm Tune · Edit · Feel |
+| Sửa level | không | chỉ qua nâng/hạ bậc, có log | tự do |
 
-Tách ra để một buổi playtest không bao giờ vô tình thành một buổi sửa level — đó là điều kiện để các con số còn đáng tin. Ở chế độ Design có vạch vàng trên thanh menu để a luôn biết mình đang ở đâu.
+Tách Test ra để một buổi playtest không bao giờ vô tình thành buổi sửa level — đó là điều kiện để các con số còn đáng tin. Mỗi chế độ có màu vạch riêng trên thanh menu.
 
-Chế độ Test vẫn có nút **Đo level này** ở tab Play và toàn bộ report Playtest, nên vẫn phân tích được đầy đủ.
+## Chơi & cân — thẩm định bậc bằng tay chơi
+
+Ngược với tab Tune (cân bằng bảng số), đây là cân bằng cảm giác chơi. Thanh điều khiển nằm ngay dưới menu nên không phải rời bàn:
+
+> Level 3 · **Bậc 2** · Tập lái · ước lượng win TB 91–100% · ẩu 53–89% — **− Hạ bậc** · **+ Nâng bậc** · **⟳ Đổi bàn khác cùng bậc** · **✓ Chốt bậc 2**
+
+Vòng lặp: chơi → thấy dễ → Nâng bậc (bàn được dựng lại ở bậc mới, đạt đủ tiêu chí của bậc đó) → chơi lại → ưng thì Chốt. Sang level sau. Cuối cùng ra một bảng kiểu `L1=1 L2=2 L3=3 L4=5 …`.
+
+**Nâng bậc dựng lại bàn**, vì bậc khác nghĩa là knob khác. Nên a đang thẩm định *bậc*, không phải so hai phiên bản của cùng một bàn. Bậc đúng mà bàn cụ thể khó chịu thì dùng **Đổi bàn khác cùng bậc**.
+
+### Nhật ký
+
+Ghi **mọi lượt**, cả thắng cả thua — "thua ở bậc 5" chính là bằng chứng bậc 4 là điểm ngọt. Mỗi dòng:
+
+```
+Lv 3 · bậc 2 · thắng · 16/21 move, thừa 5, 83s · 4×5 · máy đo TB 91–100%
+```
+
+Kết quả **của a** đặt cạnh **số máy đo**. Cái này bắt buộc: a chơi 1 lượt là n = 1, và a là người ra đề nên chơi giỏi hơn player thật nhiều. "Thắng còn 5 move" của a rất có thể là "player trung bình thua 30%". Không đặt hai số cạnh nhau thì vòng lặp này đẩy độ khó lên quá tay một cách hệ thống, và a ra một set chỉ a chơi được.
+
+Thời gian giải cũng được bắt — solver không đo được nó, mà nó là tín hiệu game feel thật.
+
+### Cảnh báo curve
+
+Chốt bậc xong tool soi lại cả chuỗi và cảnh báo khi ramp gãy:
+
+- **đi lùi** — `Level 5 (bậc 3) dễ hơn level 4 (bậc 8) — player đi tới sẽ thấy game nhẹ đi`
+- **nhảy quá 2 bậc** — `Level 3 → 4 nhảy 5 bậc. Nhảy quá 2 bậc thường thành tường chắn, player rơi ở đây`
+- **phẳng** — cả chuỗi cùng một bậc
+
+Bậc đã chốt đi vào JSON export dưới khoá `tier`. Tab Nhật ký có nút Copy JSON cho cả bảng bậc + toàn bộ log.
+
+Script được từ console: `CarTool.lockTierAt(i, tier)`, `CarTool.tiers()`, `CarTool.attempts()`, `CarTool.curveWarnings()`.
 
 ## Kiểu dáng xe
 

@@ -30,9 +30,14 @@
     <span class="badge" id="statusBadge">playing</span>
     <button id="helpGuide" title="Hướng dẫn 2 chế độ">Hướng dẫn</button>
     <span class="badge" id="buildStamp" title="thời điểm src/tool.js được sửa lần cuối — dùng để biết browser đã nạp bản mới chưa">build …</span>
-    <button id="modeToggle" class="primary" title="Đổi giữa chơi thử và chỉnh sửa"></button>
+    <span class="modes" id="modeSwitch">
+      <button data-mode="test" title="Chỉ chơi và đọc chỉ số, không sửa được gì">▶ Test</button>
+      <button data-mode="playtune" title="Chơi rồi nâng/hạ bậc ngay tại bàn, ghi nhật ký">🎮 Chơi &amp; cân</button>
+      <button data-mode="design" title="Sửa lưới, cân độ khó, game feel">⚙ Level Design</button>
+    </span>
   </div>
 
+  <div id="playtuneBar"></div>
   <div id="tuneBanner"></div>
 
   <div id="main">
@@ -45,6 +50,7 @@
     <div id="side">
       <div id="tabs">
         <button data-tab="play" class="on">Play</button>
+        <button class="playtune-only" data-tab="journal">Nhật ký</button>
         <button class="design-only" data-tab="tune">Tune</button>
         <button class="design-only" data-tab="edit">Edit</button>
         <button data-tab="playtest">Playtest</button>
@@ -65,6 +71,20 @@
           <div class="hint">Bấm dấu <span class="help" data-help="do-sau"></span> cạnh bất kỳ con số nào để xem giải thích kèm ví dụ lấy từ chính 10 level này.</div>
           <h3>Move log</h3>
           <div class="log" id="moveLog">—</div>
+        </div>
+
+        <div class="panel" data-panel="journal">
+          <h3>Bậc đã chốt cho từng level</h3>
+          <div id="journalSet"></div>
+          <h3>Curve bậc</h3>
+          <div id="journalCurve"></div>
+          <h3>Nhật ký lượt chơi</h3>
+          <div class="row">
+            <button id="journalClear">Xoá nhật ký</button>
+            <button id="journalCopy">Copy JSON</button>
+            <span class="hint" id="journalCount" style="margin:0"></span>
+          </div>
+          <div id="journalLog"></div>
         </div>
 
         <div class="panel" data-panel="tune">

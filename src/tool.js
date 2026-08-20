@@ -90,8 +90,11 @@
     stage.className = 'stage theme-' + (level().theme || 'city');
     stage.appendChild(resultNode);
     continuesUsed = 0;
+    startRun();
     drawBoard();
     showResult();
+    renderPlaytuneBar();
+    ensureTier();
     renderTop();
     renderEditor();
     renderPlayMetrics(analysisCache[idx]);
@@ -110,12 +113,14 @@
       renderTop();
       logMoves(ev);
       showResult();
+      if (state.status !== 'playing') logAttempt(state.status === 'won' ? 'win' : 'lose');
       return;
     }
     busy = true;
     renderer.animateMove(state, ev, function () {
       setTimeout(function () { busy = false; }, F.get('inputLock'));
       showResult();
+      if (state.status !== 'playing') logAttempt(state.status === 'won' ? 'win' : 'lose');
     });
     renderTop();
     logMoves(ev);
@@ -126,6 +131,7 @@
   function undo() {
     stopAutoplay();
     if (!history.length) return;
+    runUndos++;
     state = history.pop();
     assignShapes(state, (level().id != null ? level().id : idx + 1) * 7919 + level().cols);
     stage.classList.remove('won', 'lost');
@@ -277,28 +283,313 @@
    * Keeping them apart means a playtest session can never be a level edit by
    * accident, which is the only way the numbers stay trustworthy. */
 
-  var DESIGN_TABS = { tune: 1, edit: 1, feel: 1 };
+  var TAB_MODES = {
+    tune: 'design', edit: 'design', feel: 'design',
+    journal: 'playtune'
+  };
   var mode = 'test';
 
   function setMode(m) {
     mode = m;
     document.body.dataset.mode = m;
+    Array.prototype.forEach.call(document.querySelectorAll('#modeSwitch button'), function (b) {
+      b.classList.toggle('on', b.dataset.mode === m);
+    });
     var hint = $('modeHint');
     if (hint) {
-      hint.className = 'flag ' + (m === 'test' ? 'warn' : 'good');
+      hint.className = 'flag ' + (m === 'test' ? 'warn' : m === 'playtune' ? '' : 'good');
       hint.innerHTML = m === 'test'
-        ? 'Đang ở <b>Test</b> — chỉ chơi và đọc chỉ số. Sửa lưới, 4 template độ khó, ' +
-          'cân độ khó và game feel nằm sau nút <b>⚙ Level Design</b> ở góc phải trên.'
-        : 'Đang ở <b>Level Design</b> — đủ 6 tab. <b>Tune</b> có 4 template độ khó và ' +
-          'gợi ý khó/dễ hơn, <b>Edit</b> vẽ lưới, <b>Feel</b> tinh chỉnh animation và kiểu dáng xe.';
+        ? 'Đang ở <b>Test</b> — chỉ chơi và đọc chỉ số. Không sửa được gì.'
+        : m === 'playtune'
+          ? 'Đang ở <b>Chơi &amp; cân</b> — chơi rồi nâng/hạ bậc ngay tại bàn. Mọi lượt được ghi vào tab <b>Nhật ký</b>.'
+          : 'Đang ở <b>Level Design</b> — đủ 6 tab: Tune (thang 10 bậc + gợi ý), Edit (vẽ lưới), Feel (animation, kiểu dáng xe).';
     }
-    var btn = $('modeToggle');
-    btn.textContent = m === 'test' ? '⚙ Level Design' : '▶ Test';
-    btn.title = m === 'test'
-      ? 'Vào chế độ chỉnh sửa: sửa lưới, cân độ khó, tinh chỉnh game feel'
-      : 'Về chế độ chơi thử: chỉ chơi và đọc chỉ số, không sửa được gì';
     var active = document.querySelector('#tabs button.on');
-    if (m === 'test' && active && DESIGN_TABS[active.dataset.tab]) switchTab('play');
+    if (active && TAB_MODES[active.dataset.tab] && TAB_MODES[active.dataset.tab] !== m) switchTab('play');
+    renderPlaytuneBar();
+    /* The strip is useless without a tier, and the tier comes from a measure —
+     * so entering the mode pays for one rather than showing dead buttons. */
+    if (m === 'playtune') ensureTier();
+  }
+
+  function ensureTier() {
+    if (mode !== 'playtune') return;
+    if (tierOf[idx] || (lastMeasure && lastMeasure.valid)) { renderPlaytuneBar(); return; }
+    if (!E.validate(level()).ok) { renderPlaytuneBar(); return; }
+    var bar = $('playtuneBar');
+    bar.innerHTML = '<span class="est">đang đo để xác định bậc hiện tại…</span>';
+    setTimeout(function () {
+      lastMeasure = T.measure(level(), 600);
+      renderTunerScore(lastMeasure);
+      renderPlaytuneBar();
+      renderJournal();
+    }, 20);
+  }
+
+  /* ---------------- play & tune ----------------
+   * Judging difficulty by playing, not by reading numbers. Bump the level's
+   * tier in place, replay, and every attempt is logged with BOTH the designer's
+   * own result and the solver's estimate — because one playthrough by the person
+   * who built the level is n=1 by someone who already knows the trick, and
+   * without the estimate beside it this loop ratchets difficulty up until only
+   * the author can finish the game.
+   */
+
+  var tierOf = {};        // level index -> tier currently loaded
+  var lockedTier = {};    // level index -> tier the designer signed off
+  var attempts = [];
+  var runStart = null;
+  var runUndos = 0;
+
+  function tierNow() {
+    var t = tierOf[idx];
+    if (t) return t;
+    var m = lastMeasure;
+    if (m && m.valid) {
+      var c = DF.classify(level(), m);
+      var tp = DF.TEMPLATES[c.key];
+      if (tp) return tp.tier;
+    }
+    return null;
+  }
+
+  function tierKey(t) { return 't' + t; }
+  function maxTier() { return Object.keys(DF.TEMPLATES).length; }
+
+  function renderPlaytuneBar() {
+    var box = clear($('playtuneBar'));
+    if (mode !== 'playtune') return;
+    var t = tierNow();
+    var tpl = t ? DF.TEMPLATES[tierKey(t)] : null;
+    var locked = lockedTier[idx];
+
+    var lbl = el('span', 'tierNow', box);
+    lbl.innerHTML = 'Level <b>' + (level().id != null ? level().id : idx + 1) + '</b> · ' +
+      (tpl ? 'Bậc <b>' + t + '</b> · ' + tpl.group : 'chưa rõ bậc');
+    if (locked) {
+      var pill = el('span', 'tierPill set', box, '✓ đã chốt bậc ' + locked);
+      pill.style.marginLeft = '2px';
+    }
+    if (tpl) {
+      el('span', 'est', box, 'ước lượng: win TB ' +
+        Math.round(tpl.target.winAvg[0] * 100) + '–' + Math.round(tpl.target.winAvg[1] * 100) + '%' +
+        ' · ẩu ' + Math.round(tpl.target.winSloppy[0] * 100) + '–' + Math.round(tpl.target.winSloppy[1] * 100) + '%');
+    }
+    el('span', 'grow', box);
+
+    var down = el('button', null, box, '− Hạ bậc');
+    down.disabled = !t || t <= 1;
+    down.addEventListener('click', function () { goTier(t - 1); });
+
+    var up = el('button', 'primary', box, '+ Nâng bậc');
+    up.disabled = !t || t >= maxTier();
+    up.addEventListener('click', function () { goTier(t + 1); });
+
+    var reroll = el('button', null, box, '⟳ Đổi bàn khác cùng bậc');
+    reroll.disabled = !t;
+    reroll.addEventListener('click', function () { goTier(t, true); });
+
+    var lock = el('button', 'lock', box, locked === t ? '✓ Đã chốt' : '✓ Chốt bậc ' + (t || '?'));
+    lock.disabled = !t || locked === t;
+    lock.addEventListener('click', function () { lockTier(t); });
+  }
+
+  /* Regenerate this level at a tier. Runs in the worker so the UI stays live. */
+  function goTier(t, reroll) {
+    if (!t || t < 1 || t > maxTier()) return;
+    var key = tierKey(t);
+    var tpl = DF.TEMPLATES[key];
+    var seedBase = (+($('tplSeed') && $('tplSeed').value) || 1) + (reroll ? (tierSeedBump[idx] = (tierSeedBump[idx] || 0) + 7) : 0);
+
+    var prog = global.Modal.progress('Đang dựng bàn ở bậc ' + t,
+      '<b>' + tpl.name + '</b> · trục: ' + tpl.axis + '<br>' + tpl.focus);
+
+    var items = [{ at: idx, level: JSON.parse(JSON.stringify(level())) }];
+    var handled = false;
+    function land(best) {
+      if (handled) return;
+      handled = true;
+      global.Modal.close();
+      if (!best) { global.Modal.alert('Không dựng được', 'Không sinh được bàn hợp lệ ở bậc ' + t + '.'); return; }
+      tierOf[idx] = t;
+      applyLevelChanges([{ at: idx, level: best.level }], 'bậc ' + t + ' cho level ' + (level().id != null ? level().id : idx + 1));
+      lastMeasure = best.measure;
+      renderTunerScore(best.measure);
+      renderPlaytuneBar();
+      renderJournal();
+      startRun();
+      note('bậc ' + t + ' · bàn ' + best.level.cols + '×' + best.level.rows + ' · budget ' + best.level.moves +
+           ' · đạt ' + best.check.pass + '/' + best.check.total + ' tiêu chí');
+    }
+
+    var job = workerJob({
+      cmd: 'fitRange', items: items, key: key, palette: PALETTE,
+      templates: DF.toJSON(), seed: seedBase, runs: 600
+    }, function (p) { prog.update(p.frac, p.text); },
+       function (d) { land(d.results[0] && d.results[0].best); },
+       function () {
+         var r = DF.fitOneSync(items[0].level, key, PALETTE, seedBase, 500, null);
+         land(r && r.best);
+       });
+    if (!job) {
+      var r = DF.fitOneSync(items[0].level, key, PALETTE, seedBase, 500, null);
+      land(r && r.best);
+    }
+  }
+  var tierSeedBump = {};
+
+  function lockTier(t) {
+    lockedTier[idx] = t;
+    logAttempt('chốt');
+    renderPlaytuneBar();
+    renderJournal();
+    renderSetTable();
+    var warn = curveWarnings();
+    if (warn.length) {
+      global.Modal.open({
+        title: 'Đã chốt bậc ' + t + ' cho level ' + (level().id != null ? level().id : idx + 1),
+        body: 'Curve có chỗ đáng xem lại:<ul class="modal-steps">' +
+              warn.map(function (w) { return '<li>' + w + '</li>'; }).join('') + '</ul>',
+        actions: [
+          { label: 'Sang level sau', primary: true, fn: function () { if (idx < levels.length - 1) goNextLevel(); } },
+          { label: 'Ở lại', fn: function () {} }
+        ]
+      });
+    } else if (idx < levels.length - 1) {
+      global.Modal.open({
+        title: 'Đã chốt bậc ' + t,
+        body: 'Level ' + (level().id != null ? level().id : idx + 1) + ' = <b>bậc ' + t + '</b>. Curve vẫn mượt.',
+        actions: [
+          { label: 'Sang level sau', primary: true, fn: goNextLevel },
+          { label: 'Ở lại', fn: function () {} }
+        ]
+      });
+    }
+  }
+
+  function startRun() { runStart = Date.now(); runUndos = 0; }
+
+  function logAttempt(kind) {
+    if (mode !== 'playtune' || !state) return;
+    var t = tierNow();
+    var tpl = t ? DF.TEMPLATES[tierKey(t)] : null;
+    attempts.push({
+      at: idx,
+      level: level().id != null ? level().id : idx + 1,
+      tier: t,
+      kind: kind,                       // 'win' | 'lose' | 'chốt'
+      movesUsed: state.movesUsed,
+      movesLeft: state.movesLeft,
+      budget: state.budget,
+      size: level().cols + '×' + level().rows,
+      seconds: runStart ? Math.round((Date.now() - runStart) / 1000) : null,
+      undos: runUndos,
+      continues: continuesUsed,
+      estAvg: tpl ? tpl.target.winAvg : null,
+      estSloppy: tpl ? tpl.target.winSloppy : null
+    });
+    renderJournal();
+  }
+
+  /* Complains about a broken ramp, not about the absolute numbers. */
+  function curveWarnings() {
+    var out = [], seq = [];
+    for (var i = 0; i < levels.length; i++) {
+      if (lockedTier[i]) seq.push({ i: i, id: levels[i].id != null ? levels[i].id : i + 1, t: lockedTier[i] });
+    }
+    for (var k = 1; k < seq.length; k++) {
+      var a = seq[k - 1], b = seq[k];
+      if (b.t < a.t) {
+        out.push('Level ' + b.id + ' (bậc ' + b.t + ') <b>dễ hơn</b> level ' + a.id +
+                 ' (bậc ' + a.t + ') — player đi tới sẽ thấy game nhẹ đi.');
+      } else if (b.t - a.t >= 3) {
+        out.push('Level ' + a.id + ' → ' + b.id + ' nhảy <b>' + (b.t - a.t) +
+                 ' bậc</b>. Nhảy quá 2 bậc thường thành tường chắn, player rơi ở đây.');
+      }
+    }
+    if (seq.length >= 3) {
+      var flat = seq.every(function (x) { return x.t === seq[0].t; });
+      if (flat) out.push('Cả ' + seq.length + ' level đã chốt cùng <b>bậc ' + seq[0].t +
+                         '</b> — curve phẳng, player không thấy game khó dần.');
+    }
+    return out;
+  }
+
+  function renderJournal() {
+    var box = clear($('journalSet'));
+    var t = el('table', 'grid', box);
+    var hr = el('tr', null, el('thead', null, t));
+    ['level', 'size', 'budget', 'bậc đang dựng', 'bậc đã chốt', 'lượt đã chơi'].forEach(function (h) { el('th', null, hr, h); });
+    var tb = el('tbody', null, t);
+    levels.forEach(function (L, i) {
+      var tr = el('tr', i === idx ? 'on' : '', tb);
+      tr.addEventListener('click', function () { loadLevel(i); renderJournal(); renderPlaytuneBar(); });
+      el('td', null, tr, String(L.id != null ? L.id : i + 1));
+      el('td', null, tr, L.cols + '×' + L.rows);
+      el('td', null, tr, String(L.moves));
+      el('td', null, tr, tierOf[i] ? String(tierOf[i]) : '—');
+      var td = el('td', null, tr);
+      var pill = el('span', 'tierPill' + (lockedTier[i] ? ' set' : ''), td, lockedTier[i] ? String(lockedTier[i]) : '—');
+      el('td', null, tr, String(attempts.filter(function (a) { return a.at === i; }).length));
+    });
+
+    var warn = curveWarnings();
+    if (warn.length) {
+      var wb = el('div', 'flags', box);
+      wb.style.marginTop = '8px';
+      warn.forEach(function (w) { el('div', 'flag warn', wb).innerHTML = w; });
+    }
+
+    renderTierCurve();
+
+    var log = clear($('journalLog'));
+    $('journalCount').textContent = attempts.length + ' lượt';
+    if (!attempts.length) { el('div', 'hint', log, 'chưa có lượt nào — chơi ở chế độ Chơi & cân là tự ghi'); return; }
+    attempts.slice().reverse().forEach(function (a) {
+      var row = el('div', 'jrow ' + (a.kind === 'win' ? 'win' : a.kind === 'lose' ? 'lose' : ''), log);
+      el('span', null, row, 'Lv ' + a.level);
+      el('span', 'tierPill', row, String(a.tier == null ? '?' : a.tier));
+      var mid = el('span', 'oc', row);
+      mid.innerHTML = (a.kind === 'win' ? 'thắng' : a.kind === 'lose' ? 'thua' : 'chốt bậc') +
+        ' <span class="dim">· ' + a.movesUsed + '/' + a.budget + ' move' +
+        (a.kind === 'win' ? ', thừa ' + a.movesLeft : '') +
+        (a.undos ? ', undo ' + a.undos : '') +
+        (a.continues ? ', continue ' + a.continues : '') +
+        (a.seconds != null ? ', ' + a.seconds + 's' : '') + '</span>';
+      el('span', 'dim', row, a.size);
+      el('span', 'dim', row, a.estAvg ? 'máy đo TB ' + Math.round(a.estAvg[0] * 100) + '–' + Math.round(a.estAvg[1] * 100) + '%' : '');
+    });
+  }
+
+  function renderTierCurve() {
+    var box = clear($('journalCurve'));
+    var any = levels.some(function (L, i) { return lockedTier[i] || tierOf[i]; });
+    if (!any) { el('div', 'hint', box, 'chưa chốt bậc nào'); return; }
+    var W = 640, H = 150, padL = 26, padB = 20, n = levels.length;
+    var bw = (W - padL - 10) / n, mx = maxTier();
+    var svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;height:auto">';
+    svg += '<rect width="' + W + '" height="' + H + '" fill="#10131a" rx="8"/>';
+    for (var g = 1; g <= mx; g += 3) {
+      var y = H - padB - (H - padB - 10) * (g / mx);
+      svg += '<line x1="' + padL + '" y1="' + y + '" x2="' + (W - 8) + '" y2="' + y + '" stroke="#2b3140"/>' +
+             '<text x="4" y="' + (y + 3) + '" fill="#93a0b3" font-size="9">' + g + '</text>';
+    }
+    var pts = [];
+    for (var i = 0; i < n; i++) {
+      var t = lockedTier[i] || tierOf[i];
+      var x = padL + i * bw + bw * 0.5;
+      if (t) {
+        var yy = H - padB - (H - padB - 10) * (t / mx);
+        pts.push(x + ',' + yy);
+        svg += '<circle cx="' + x + '" cy="' + yy + '" r="4" fill="' + (lockedTier[i] ? '#3f9c5a' : '#7a52d0') + '"/>';
+      }
+      svg += '<text x="' + x + '" y="' + (H - 6) + '" fill="#93a0b3" font-size="9" text-anchor="middle">' +
+             (levels[i].id != null ? levels[i].id : i + 1) + '</text>';
+    }
+    if (pts.length > 1) svg += '<polyline points="' + pts.join(' ') + '" fill="none" stroke="#3f9c5a" stroke-width="2"/>';
+    svg += '</svg>';
+    box.innerHTML = svg;
+    el('div', 'hint', box, 'xanh lá = bậc đã chốt · tím = bậc đang dựng chưa chốt');
   }
 
   /* ---------------- result screen ---------------- */
@@ -1567,6 +1858,8 @@
         if (L.theme) o.theme = L.theme;
         if (L.tutorial) o.tutorial = L.tutorial;
         if (L.unlock) o.unlock = L.unlock;
+        if (lockedTier[i]) o.tier = lockedTier[i];
+        else if (tierOf[i]) o.tierWorking = tierOf[i];
         o.pad = L.pad;
         o.grid = L.grid;
         var a = analysisCache[i];
@@ -1637,7 +1930,34 @@
         : '';
     }, 20);
   });
-  $('modeToggle').addEventListener('click', function () { setMode(mode === 'test' ? 'design' : 'test'); });
+  Array.prototype.forEach.call(document.querySelectorAll('#modeSwitch button'), function (b) {
+    b.addEventListener('click', function () { setMode(b.dataset.mode); });
+  });
+  $('journalClear').addEventListener('click', function () {
+    global.Modal.open({
+      title: 'Xoá nhật ký?',
+      body: 'Xoá toàn bộ ' + attempts.length + ' lượt đã ghi. Bậc đã chốt vẫn giữ.',
+      actions: [
+        { label: 'Xoá', danger: true, fn: function () { attempts = []; renderJournal(); } },
+        { label: 'Thôi', primary: true, fn: function () {} }
+      ]
+    });
+  });
+  $('journalCopy').addEventListener('click', function () {
+    var out = {
+      tiers: levels.map(function (L, i) {
+        return { level: L.id != null ? L.id : i + 1, tier: lockedTier[i] || null, working: tierOf[i] || null };
+      }),
+      attempts: attempts
+    };
+    var ta = document.createElement('textarea');
+    ta.value = JSON.stringify(out, null, 2);
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    ta.remove();
+    note('đã copy nhật ký (' + attempts.length + ' lượt)');
+  });
   $('helpGuide').addEventListener('click', function () { showGuide(true); });
   $('boardToggle').addEventListener('click', function () { setBoardVisible(!boardVisible); });
   $('tplScope').addEventListener('change', function () {
@@ -1726,6 +2046,7 @@
       b.classList.add('on');
       document.querySelector('.panel[data-panel="' + b.dataset.tab + '"]').classList.add('on');
       if (b.dataset.tab === 'set') renderSetTable();
+      if (b.dataset.tab === 'journal') renderJournal();
       if (b.dataset.tab === 'tune') { if (!lastMeasure) measureCurrent(); else renderTemplates(); }
     });
   });
@@ -1773,6 +2094,7 @@
   setMode('test');
   setBoardVisible(true);
   loadLevel(0);
+  renderJournal();
   showGuide(false);
 
   /* Sprites arrive asynchronously; redraw once they do. */
@@ -1785,6 +2107,16 @@
   renderSetTable();
   global.CarTool = {
     levels: function () { return levels; },
+    /* Scripting hooks — assign tiers from the console without replaying, and
+     * read back the ramp complaints. */
+    lockTierAt: function (i, t) {
+      lockedTier[i] = t; tierOf[i] = t;
+      renderJournal(); renderPlaytuneBar(); renderSetTable();
+      return curveWarnings();
+    },
+    tiers: function () { return { working: tierOf, locked: lockedTier }; },
+    attempts: function () { return attempts; },
+    curveWarnings: function () { return curveWarnings(); },
     stateNow: function () { return state; },
     analysis: function () { return analysisCache; },
     load: loadLevel

@@ -20,94 +20,96 @@
 
   var E = global.Engine, S = global.Solver, G = global.Gen, T = global.Tuner;
 
-  var TEMPLATES = {
-    'tap-lai': {
-      tier: 1,
-      name: 'Độ 1 · Tập lái',
-      axis: 'Không trục nào — dạy luật',
-      focus:
-        'Mỗi màu đúng một cột nên xe văng ra tự chỉ đường cho nước sau; mỗi cột ' +
-        'chỉ một xe lạ nên auto-sort lo hết. Player chỉ cần hiểu "tap cột cùng màu".',
-      why:
-        'Budget rộng gấp 3 lần lời giải để cả người bấm ẩu cũng không thua. Thua ' +
-        'ở tier này không dạy được gì — player chưa biết mình sai ở đâu.',
-      when: 'Level 1–8. Đây chính là setup 10 level hiện tại.',
-      minCols: 3, minRows: 3,
-      build: { colorRatio: 1.0, strayDensity: 0.14, hiddenRatio: 0, slack: 3.0 },
-      target: {
-        winCareful: [0.97, 1.0], winAvg: [0.95, 1.0], winSloppy: [0.72, 1.0],
-        depth: [0, 14], dumpRatio: [0, 0.22], slack: [2.6, 3.4], hiddenRatio: [0, 0]
-      }
-    },
+  /* The 10-step ladder.
+   *
+   * Rows are [colorRatio, strayDensity, hiddenRatio, slack] plus the measured
+   * medians the bands are built from. Every number came from generating three
+   * boards at each of four sizes per step and playtesting them; nothing here is
+   * a guess. Median win for the average player steps down
+   *   100 · 99 · 97 · 93 · 88 · 83 · 79 · 72 · 58 · 52
+   * so the numbers are a real ordering rather than four axes wearing a ladder.
+   *
+   * Two things the shape of that curve tells level design:
+   *
+   * Steps 1-4 barely move the average player (100 to 93) but halve the careless
+   * one (94 to 40). Early difficulty is about punishing inattention, not skill.
+   *
+   * Budget carries the whole ladder. Dropping colours below the column count at
+   * step 6 makes a level DEEPER but slightly EASIER — more columns accept the
+   * pad car, so fewer moves are wasted — so slack has to keep tightening
+   * through that transition or the ladder stalls. Measured directly: at slack
+   * 1.48 step 6 came out easier than step 5.
+   */
+  var LADDER = [
+    /* cr   sd    hid   slack  waMed wsMed wcMed  minC minR  group */
+    [1.00, 0.12, 0.00, 3.20, 1.00, 0.94, 1.00, 3, 3, 0],
+    [1.00, 0.20, 0.00, 2.10, 0.99, 0.70, 1.00, 3, 3, 0],
+    [1.00, 0.26, 0.00, 1.72, 0.97, 0.59, 1.00, 4, 5, 1],
+    [1.00, 0.30, 0.00, 1.56, 0.93, 0.40, 1.00, 4, 5, 1],
+    [1.00, 0.36, 0.00, 1.44, 0.88, 0.39, 1.00, 4, 5, 1],
+    [0.62, 0.38, 0.00, 1.34, 0.83, 0.39, 0.99, 5, 5, 2],
+    [0.60, 0.42, 0.00, 1.26, 0.79, 0.38, 0.98, 5, 5, 2],
+    [0.60, 0.46, 0.00, 1.20, 0.72, 0.31, 0.96, 5, 5, 2],
+    [0.60, 0.44, 0.18, 1.15, 0.58, 0.25, 0.93, 5, 6, 3],
+    [0.60, 0.48, 0.26, 1.10, 0.52, 0.22, 0.90, 5, 6, 3]
+  ];
 
-    'gio-cao-diem': {
-      tier: 2,
-      name: 'Độ 2 · Giờ cao điểm',
-      axis: 'Sức ép budget',
-      focus:
-        'Giữ nguyên cấu trúc dễ đọc của Tập lái — mỗi màu một cột, xe lạ thưa — ' +
-        'rồi siết budget về 1.65 lần lời giải. Player thua vì <b>tiêu move phí</b>, ' +
-        'không vì bí đường.',
-      why:
-        'Game này không có ngõ cụt nên budget là nguồn thua duy nhất. Đây là tier ' +
-        'đầu tiên có tỉ lệ thua thật, và là chỗ đầu tiên booster Undo có lý do tồn ' +
-        'tại: mỗi nước sai ăn thẳng vào budget. Đo được: player ẩu tụt xuống 26–58% ' +
-        'trong khi player giỏi vẫn 99–100% — đúng nghĩa kỹ năng có thưởng.',
-      when: 'Level 9–25.',
-      minCols: 4, minRows: 5,
-      build: { colorRatio: 1.0, strayDensity: 0.26, hiddenRatio: 0, slack: 1.65 },
-      target: {
-        winCareful: [0.90, 1.0], winAvg: [0.80, 0.95], winSloppy: [0.28, 0.72],
-        depth: [0, 20], dumpRatio: [0, 0.26], slack: [1.50, 1.85], hiddenRatio: [0, 0]
-      }
-    },
+  var GROUPS = [
+    { name: 'Tập lái', axis: 'dạy luật',
+      focus: 'Mỗi màu đúng một cột nên xe văng ra tự chỉ đường cho nước sau, và mỗi cột chỉ một xe lạ nên auto-sort lo hết. Player chỉ cần hiểu "tap cột cùng màu".',
+      why: 'Budget rộng gấp 2–3 lần lời giải để cả người bấm ẩu cũng không thua. Thua ở đây không dạy được gì — player chưa biết mình sai ở đâu.' },
+    { name: 'Giờ cao điểm', axis: 'sức ép budget',
+      focus: 'Giữ cấu trúc dễ đọc — mỗi màu một cột — rồi siết budget dần. Player thua vì <b>tiêu move phí</b>, không vì bí đường.',
+      why: 'Game không có ngõ cụt nên budget là nguồn thua duy nhất. Đây là nơi booster Undo có lý do tồn tại: mỗi nước sai ăn thẳng vào budget. Đo được: bậc 3 đến 5 gần như không làm player giỏi thua, nhưng player ẩu tụt từ 59% xuống 39%.' },
+    { name: 'Bãi chật', axis: 'độ sâu định tuyến',
+      focus: 'Số màu <b>ít hơn</b> số cột nên có cột trùng màu và player phải chọn nhả xe vào đâu. Mật độ xe lạ cao để nhiều cột có ≥2 xe lạ — auto-sort im lặng.',
+      why: 'Bật trục này làm level <b>sâu hơn nhưng hơi dễ hơn</b>: nhiều cột nhận được xe trên pad hơn nên bớt move phí. Đo trực tiếp — ở slack 1.48 bậc 6 ra dễ hơn bậc 5. Nên slack phải tiếp tục siết qua khúc chuyển này, không thì thang đứng lại.' },
+    { name: 'Giờ đêm', axis: 'thiếu thông tin, cộng dồn',
+      focus: 'Ẩn 18–26% bàn, cộng lên trên cả hai trục kia, budget siết gần sát lời giải.',
+      why: 'Xe ẩn lộ ngay khi cột bị tap nên một mình nó yếu — chỉ chặn được lượt lập kế hoạch đầu của mỗi cột. Nó chỉ thành trục thật khi budget đã rất chặt: lúc đó nước tap để dò màu cũng là nước tiêu budget. Đừng quá 30% bàn, quá ngưỡng đó thành đoán chứ không phải chơi.' }
+  ];
 
-    'bai-chat': {
-      tier: 3,
-      name: 'Độ 3 · Bãi chật',
-      axis: 'Độ sâu định tuyến',
-      focus:
-        'Số màu <b>ít hơn</b> số cột nên có cột trùng màu và player phải chọn nhả ' +
-        'xe vào đâu. Mật độ xe lạ cao để nhiều cột có ≥2 xe lạ — auto-sort im lặng, ' +
-        'player tự tính thứ tự moi ra.',
-      why:
-        'Ít màu hơn số cột cho player <b>nhiều chỗ nhả xe đúng hơn</b>, nên nó tự ' +
-        'động bớt move phí và triệt tiêu một phần sức ép budget. Ở slack 1.60 đo ' +
-        'được win trung bình 83–98% — ngang hệt Độ 2, tức là sâu hơn mà không khó ' +
-        'hơn. Nên slack ở đây phải siết về <b>1.42</b> mới bù lại được và giữ thang ' +
-        '1→4 đúng thứ tự. Bài học: gộp màu và siết budget <b>trừ nhau</b>, không cộng.',
-      when: 'Level 26–60. Level 6 hiện tại là mẫu gần nhất.',
-      minCols: 5, minRows: 5,
-      build: { colorRatio: 0.60, strayDensity: 0.34, hiddenRatio: 0, slack: 1.42 },
-      target: {
-        winCareful: [0.80, 1.0], winAvg: [0.62, 0.80], winSloppy: [0.18, 0.60],
-        depth: [22, 100], dumpRatio: [0, 0.28], slack: [1.30, 1.55], hiddenRatio: [0, 0]
-      }
-    },
+  var WHEN = [
+    'Level 1–4, dạy luật.', 'Level 5–8.',
+    'Level 9–16.', 'Level 17–24.', 'Level 25–34.',
+    'Level 35–45.', 'Level 46–58.', 'Level 59–72.',
+    'Level 73–88, nên gate bằng booster.', 'Level 89+ hoặc daily challenge.'
+  ];
 
-    'gio-dem': {
-      tier: 4,
-      name: 'Độ 4 · Giờ đêm',
-      axis: 'Thiếu thông tin, cộng dồn cả ba trục',
-      focus:
-        'Ẩn ~24% bàn, số màu ít hơn số cột, mật độ xe lạ cao nhất, budget siết về ' +
-        '1.45x. Tier khó nhất và là tier duy nhất player ẩu gần như không qua.',
-      why:
-        'Xe ẩn lộ ngay khi cột bị tap nên một mình nó chỉ chặn được lượt lập kế ' +
-        'hoạch đầu của mỗi cột — đo được chỉ +9 điểm khó. Ở slack 1.45 tier này còn ' +
-        'ra win trung bình 70–98%, tức <b>không khó hơn Độ 3</b>. Xe ẩn chỉ thành ' +
-        'trục thật khi ghép với budget rất chặt: nước tap để dò màu cũng là nước ' +
-        'tiêu budget. Nên slack phải về <b>1.28</b>. Đừng đẩy xe ẩn quá 30% bàn — ' +
-        'quá ngưỡng đó thành đoán, không phải chơi.',
-      when: 'Level 60+, hoặc daily challenge. Nên gate bằng booster.',
-      minCols: 5, minRows: 6,
-      build: { colorRatio: 0.60, strayDensity: 0.42, hiddenRatio: 0.24, slack: 1.28 },
-      target: {
-        winCareful: [0.55, 0.98], winAvg: [0.35, 0.62], winSloppy: [0, 0.35],
-        depth: [16, 100], dumpRatio: [0, 0.32], slack: [1.16, 1.40], hiddenRatio: [0.18, 0.30]
-      }
-    }
-  };
+  function clamp01(v) { return Math.max(0, Math.min(1, v)); }
+
+  function buildLadder() {
+    var out = {};
+    LADDER.forEach(function (row, i) {
+      var tier = i + 1;
+      var cr = row[0], sd = row[1], hid = row[2], slack = row[3];
+      var wa = row[4], ws = row[5], wc = row[6];
+      var g = GROUPS[row[9]];
+      out['t' + tier] = {
+        tier: tier,
+        group: g.name,
+        name: 'Bậc ' + tier + ' · ' + g.name,
+        axis: g.axis,
+        focus: g.focus,
+        why: g.why,
+        when: WHEN[i],
+        minCols: row[7], minRows: row[8],
+        build: { colorRatio: cr, strayDensity: sd, hiddenRatio: hid, slack: slack },
+        target: {
+          winCareful: [clamp01(wc - 0.12), 1.0],
+          winAvg: [clamp01(wa - 0.08), clamp01(wa + 0.06)],
+          winSloppy: [clamp01(ws - 0.17), clamp01(ws + 0.19)],
+          depth: tier <= 5 ? [0, 22] : [14, 100],
+          dumpRatio: [0, 0.34],
+          slack: [slack * 0.92, slack * 1.12],
+          hiddenRatio: hid === 0 ? [0, 0] : [clamp01(hid - 0.07), clamp01(hid + 0.11)]
+        }
+      };
+    });
+    return out;
+  }
+
+  var TEMPLATES = buildLadder();
 
   var LABELS = {
     winCareful: 'win — giỏi', winAvg: 'win — trung bình', winSloppy: 'win — ẩu',
@@ -364,7 +366,8 @@
   }
 
   global.Difficulty = {
-    TEMPLATES: TEMPLATES, LABELS: LABELS,
+    TEMPLATES: TEMPLATES, LABELS: LABELS, LADDER: LADDER, GROUPS: GROUPS,
+    rebuild: function () { load(buildLadder()); return TEMPLATES; },
     check: check, distance: distance, classify: classify,
     buildArgs: buildArgs, fit: fit, plan: plan, fitSyncOnce: fitSyncOnce, fitOneSync: fitOneSync,
     rebudget: rebudget, refineBudget: refineBudget,
