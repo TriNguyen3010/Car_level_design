@@ -302,45 +302,24 @@
   var SEEN_KEY = 'carsort.guide.v1';
 
   var GUIDE_HTML =
-    '<b>Tool này có 2 chế độ.</b> Tách riêng để một buổi playtest không bao giờ vô tình ' +
-    'thành một buổi sửa level — đó là điều kiện để các con số còn đáng tin.' +
+    '<b>4 bộ cấp độ</b> — góc trên trái: Gốc · Dễ · Trung bình · Khó. ' +
+    'Cùng 10 level, ba curve khác nhau. Đổi bộ là chơi lại từ level 1.' +
 
-    '<div class="card" style="margin-top:11px">' +
-      '<div style="font-size:14px;font-weight:700;color:var(--ink)">▶ Test <span style="font-weight:400;color:var(--ink-dim);font-size:12px">— mặc định khi mở tool</span></div>' +
-      '<div style="margin:5px 0"><b>Mục tiêu:</b> chơi thật và đọc chỉ số. Không sửa được gì, kể cả vô tình.</div>' +
-      '<b>Làm được:</b>' +
-      '<ul class="modal-steps">' +
-        '<li>Chơi level — click cột hoặc bấm phím <b>1–9</b></li>' +
-        '<li><b>Đo level này</b> → lời giải tối ưu, slack, độ sâu, win rate của 3 hạng player</li>' +
-        '<li><b>Playtest</b> → chạy 10.000 ván, ra đường cong budget → win rate</li>' +
-        '<li><b>Level Set</b> → bảng chỉ số cả set + curve (chỉ xem)</li>' +
-      '</ul>' +
+    '<div class="guide-modes">' +
+      '<b>▶ Test</b><span>Chơi và đọc chỉ số. Không sửa được gì, kể cả vô tình.</span>' +
+      '<b>🎮 Chơi &amp; cân</b><span>Chơi rồi nâng/hạ bậc ngay tại bàn. Mọi lượt vào tab Nhật ký.</span>' +
+      '<b>⚙ Level Design</b><span>Sửa lưới, thang 10 bậc, game feel, export.</span>' +
     '</div>' +
 
-    '<div class="card">' +
-      '<div style="font-size:14px;font-weight:700;color:var(--ink)">⚙ Level Design</div>' +
-      '<div style="margin:5px 0"><b>Mục tiêu:</b> sửa level và cân độ khó.</div>' +
-      '<b>Thêm 3 tab:</b>' +
-      '<ul class="modal-steps">' +
-        '<li><b>Tune</b> → 4 template độ khó (Tập lái · Giờ cao điểm · Bãi chật · Giờ đêm), ' +
-            'và gợi ý khó/dễ hơn — mỗi phương án được playtest thật rồi xếp theo tác động đo được</li>' +
-        '<li><b>Edit</b> → vẽ lưới, đổi kích thước bàn, generate</li>' +
-        '<li><b>Feel</b> → timing animation, kiểu dáng xe, SFX</li>' +
-        '<li><b>Level Set</b> → thêm / nhân bản / xoá level, export JSON</li>' +
-      '</ul>' +
-      'Sửa gì cũng vào chồng <b>Hoàn tác</b> ở banner trên cùng, nên không thí nghiệm nào là một chiều.' +
-    '</div>' +
-
-    '<div class="flag" style="margin-top:4px">Đổi chế độ bằng nút góc phải trên. Ở Level Design có ' +
-    'vạch vàng trên thanh menu để luôn biết mình đang ở đâu. Mọi con số đều có dấu ' +
-    '<span class="help" data-help="do-sau"></span> bấm được để xem giải thích kèm ví dụ.</div>';
+    '<div class="flag">Tab <b>Độ khó</b> mở sẵn — biểu đồ 4 bộ và từng level. ' +
+    'Mọi con số đều có dấu <span class="help" data-help="do-sau"></span> bấm được.</div>';
 
   function showGuide(force) {
     if (!force) {
       try { if (localStorage.getItem(SEEN_KEY)) return; } catch (e) {}
     }
     global.Modal.open({
-      title: 'Hai chế độ của tool',
+      title: 'Bắt đầu ở đâu',
       body: GUIDE_HTML,
       wide: true,
       sticky: true,

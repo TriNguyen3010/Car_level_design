@@ -14,7 +14,7 @@ Góc trái trên có badge **build hh:mm dd-mm** = thời điểm `src/tool.js` 
 
 **Mở ra là chế độ Test — chỉ có 3 tab.** Bấm **⚙ Level Design** góc phải trên mới ra Tune (4 template độ khó + gợi ý khó/dễ), Edit (vẽ lưới), Feel (animation + kiểu dáng xe).
 
-Lần đầu mở tool có popup giải thích 2 chế độ. Bấm **Tôi đã hiểu rồi** để không hiện lại; mở lại bất cứ lúc nào bằng nút **Hướng dẫn**.
+Lần đầu mở tool có popup **Bắt đầu ở đâu** — 4 bộ cấp độ, 3 chế độ mỗi cái một dòng, hết. Bấm **Tôi đã hiểu rồi** để không hiện lại; mở lại bằng nút **Hướng dẫn**.
 
 Tool không dùng `alert`/`confirm` của trình duyệt — mọi hộp thoại là modal trong tool.
 
