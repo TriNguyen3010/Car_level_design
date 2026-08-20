@@ -45,12 +45,32 @@
       el('span', null, b, tierRange(k));
       b.title = SETS[k].name + ' — ' + (SETS[k].intent || '').replace(/<[^>]+>/g, '') +
                 '\n\nĐổi bộ là chơi lại từ level 1.';
-      b.addEventListener('click', function () { switchSet(k); });
+      b.addEventListener('click', function () { askSwitchSet(k); });
     });
   }
 
   /* Switching campaign restarts from level 1 — the sets are different curves,
    * so carrying a level index across them would land the player mid-ramp. */
+  function askSwitchSet(key) {
+    if (!SETS || !SETS[key] || key === currentSet) return;
+    var from = SETS[currentSet], to = SETS[key];
+    global.Modal.open({
+      title: 'Đổi sang bộ ' + (SET_WORD[key] || to.label) + '?',
+      wide: true,
+      body:
+        '<b>' + (SET_WORD[currentSet] || from.label) + '</b> (' + tierRange(currentSet) + ')' +
+        '  →  <b>' + (SET_WORD[key] || to.label) + '</b> (' + tierRange(key) + ')' +
+        '<div class="flag warn" style="margin-top:9px">Mỗi bộ là một curve khác nhau, nên ' +
+        '<b>sẽ chơi lại từ level 1</b>. Giữ số level cũ sẽ rơi vào giữa ramp của bộ mới.</div>' +
+        '<div style="margin-top:8px">' + (to.intent || '') + '</div>' +
+        (to.note ? '<div class="hint" style="margin-top:6px">' + to.note + '</div>' : ''),
+      actions: [
+        { label: 'Đổi và về level 1', primary: true, fn: function () { switchSet(key); } },
+        { label: 'Ở lại bộ ' + (SET_WORD[currentSet] || from.label), fn: function () { renderSetPick(); } }
+      ]
+    });
+  }
+
   function switchSet(key) {
     if (!SETS || !SETS[key] || key === currentSet) return;
     currentSet = key;
@@ -61,6 +81,7 @@
     tierOf = {}; lockedTier = {};
     idx = 0;
     renderSetPick();
+    renderCurveTab();
     renderBanner();
     loadLevel(0);
     renderSetTable();
@@ -688,6 +709,205 @@
     svg += '</svg>';
     box.innerHTML = svg;
     el('div', 'hint', box, 'xanh lá = bậc đã chốt · tím = bậc đang dựng chưa chốt');
+  }
+
+  /* ---------------- difficulty tab ----------------
+   * Charts first. A campaign is a shape, and a shape is something you look at;
+   * ten rows of numbers make the reader rebuild the shape in their head. */
+
+  var SET_COLOR = { 'default': '#8a93a3', easy: '#4ec97a', medium: '#e8b13a', hard: '#e05c4c' };
+  var measuredSet = {};        // set key -> [{winCareful, winAvg, winSloppy}]
+
+  function tiersOf(key) {
+    return SETS[key].levels.map(function (L) { return L.tier || null; });
+  }
+
+  /* All four campaigns on one axis, so the three approaches are visibly
+   * different rather than three tables you compare by eye. */
+  function drawCompare() {
+    var box = clear($('curveCompare'));
+    var W = 660, H = 210, padL = 30, padB = 24, padT = 12;
+    var n = Math.max.apply(null, SET_ORDER.map(function (k) { return SETS[k].levels.length; }));
+    var mx = 10;
+    function X(i) { return padL + (i / Math.max(1, n - 1)) * (W - padL - 14); }
+    function Y(t) { return padT + (1 - (t - 1) / (mx - 1)) * (H - padT - padB); }
+
+    var svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;height:auto">';
+    svg += '<rect width="' + W + '" height="' + H + '" fill="#10131a" rx="8"/>';
+    for (var t = 1; t <= mx; t += 3) {
+      svg += '<line x1="' + padL + '" y1="' + Y(t) + '" x2="' + (W - 14) + '" y2="' + Y(t) +
+             '" stroke="#2b3140"/><text x="6" y="' + (Y(t) + 3) + '" fill="#93a0b3" font-size="9">bậc ' + t + '</text>';
+    }
+    SET_ORDER.forEach(function (k) {
+      var ts = tiersOf(k), col = SET_COLOR[k], pts = [], dots = '';
+      ts.forEach(function (v, i) {
+        if (!v) return;
+        pts.push(X(i) + ',' + Y(v));
+        var isB = (SETS[k].breathers || []).indexOf(SETS[k].levels[i].id) >= 0;
+        if (isB) dots += '<circle cx="' + X(i) + '" cy="' + Y(v) + '" r="4" fill="' + col + '"/>';
+      });
+      if (pts.length > 1) {
+        svg += '<polyline points="' + pts.join(' ') + '" fill="none" stroke="' + col +
+               '" stroke-width="' + (k === currentSet ? 3 : 1.6) + '"' +
+               (k === currentSet ? '' : ' opacity=".45"') + '/>' + dots;
+      }
+    });
+    for (var i = 0; i < n; i++) {
+      svg += '<text x="' + X(i) + '" y="' + (H - 7) + '" fill="#93a0b3" font-size="9" text-anchor="middle">' +
+             (i + 1) + '</text>';
+    }
+    svg += '</svg>';
+    box.innerHTML = svg;
+    var lg = el('div', 'legend', box);
+    SET_ORDER.forEach(function (k) {
+      var sp = el('span', null, lg);
+      sp.innerHTML = '<i style="background:' + SET_COLOR[k] + '"></i>' +
+        (SET_WORD[k] || SETS[k].label) + (k === currentSet ? ' (đang chọn)' : '');
+    });
+    el('span', null, lg, '● = chỗ nghỉ chủ ý');
+  }
+
+  /* Tier as bars, the win rate players actually get as a line on top. The two
+   * disagree often enough that showing only tiers would mislead. */
+  function drawActive() {
+    var box = clear($('curveActive'));
+    var spec = setSpec(), key = currentSet;
+    var ts = tiersOf(key), n = ts.length;
+    var mea = measuredSet[key];
+    var metric = spec.rhythmOn || 'winAvg';
+    var W = 660, H = 230, padL = 32, padR = 34, padB = 24, padT = 12;
+    var bw = (W - padL - padR) / n;
+    function Yt(t) { return padT + (1 - (t - 1) / 9) * (H - padT - padB); }
+    function Yw(w) { return padT + (1 - w) * (H - padT - padB); }
+
+    var svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;height:auto">';
+    svg += '<rect width="' + W + '" height="' + H + '" fill="#10131a" rx="8"/>';
+    [0.25, 0.5, 0.75, 1].forEach(function (w) {
+      svg += '<line x1="' + padL + '" y1="' + Yw(w) + '" x2="' + (W - padR) + '" y2="' + Yw(w) +
+             '" stroke="#242936"/><text x="' + (W - padR + 4) + '" y="' + (Yw(w) + 3) +
+             '" fill="#93a0b3" font-size="9">' + Math.round(w * 100) + '%</text>';
+    });
+    for (var i = 0; i < n; i++) {
+      var t = ts[i];
+      if (!t) continue;
+      var isB = (spec.breathers || []).indexOf(SETS[key].levels[i].id) >= 0;
+      var h = (H - padT - padB) * ((t - 1) / 9);
+      svg += '<rect x="' + (padL + i * bw + bw * 0.2) + '" y="' + (H - padB - h) +
+             '" width="' + (bw * 0.6) + '" height="' + h + '" rx="2" fill="' +
+             (isB ? '#3f9c5a' : '#3d4657') + '"/>';
+      svg += '<text x="' + (padL + i * bw + bw * 0.5) + '" y="' + (H - padB - h - 4) +
+             '" fill="#c8d0dc" font-size="9" text-anchor="middle">' + t + '</text>';
+    }
+    if (mea) {
+      [['winCareful', '#4ec97a'], ['winAvg', '#4a90d9'], ['winSloppy', '#e05c4c']].forEach(function (m) {
+        var pts = mea.map(function (r, i) {
+          return r ? (padL + i * bw + bw * 0.5) + ',' + Yw(r[m[0]]) : null;
+        }).filter(Boolean);
+        if (pts.length > 1) {
+          svg += '<polyline points="' + pts.join(' ') + '" fill="none" stroke="' + m[1] +
+                 '" stroke-width="' + (m[0] === metric ? 2.6 : 1.5) + '"' +
+                 (m[0] === metric ? '' : ' opacity=".55"') + '/>';
+        }
+      });
+    }
+    for (var j = 0; j < n; j++) {
+      svg += '<text x="' + (padL + j * bw + bw * 0.5) + '" y="' + (H - 7) +
+             '" fill="#93a0b3" font-size="9" text-anchor="middle">' + (j + 1) + '</text>';
+    }
+    svg += '<text x="4" y="' + (padT + 8) + '" fill="#93a0b3" font-size="9">bậc 10</text>';
+    svg += '</svg>';
+    box.innerHTML = svg;
+    var lg = el('div', 'legend', box);
+    lg.innerHTML =
+      '<span><i style="background:#3d4657;height:8px"></i>bậc</span>' +
+      '<span><i style="background:#3f9c5a;height:8px"></i>bậc ở chỗ nghỉ chủ ý</span>' +
+      (mea ? '<span><i style="background:#4ec97a"></i>win giỏi</span>' +
+             '<span><i style="background:#4a90d9"></i>win trung bình</span>' +
+             '<span><i style="background:#e05c4c"></i>win ẩu</span>' +
+             '<span>nhịp của bộ này đọc trên ' + (metric === 'winSloppy' ? 'player ẩu' : 'player trung bình') + '</span>'
+          : '<span>bấm <b>Đo cả bộ</b> để vẽ tỉ lệ thắng thật</span>');
+  }
+
+  function miniThumb(parent, L) {
+    var g = el('div', 'miniThumb', parent);
+    g.style.gridTemplateColumns = 'repeat(' + L.cols + ', 8px)';
+    var target = T.assignTargets(L);
+    for (var r = 0; r < L.rows; r++) {
+      for (var c = 0; c < L.cols; c++) {
+        var spec = String(L.grid[c][r]);
+        var hidden = spec.charAt(0) === '?';
+        var color = hidden ? spec.slice(1) : spec;
+        var rev = color === E.REV;
+        var stray = !rev && !hidden && color !== target[c];
+        var n = el('i', (rev ? 'rev' : '') + (hidden ? ' hid' : '') + (stray ? ' stray' : ''), g);
+        if (!rev && !hidden) n.style.background = colorHex(color);
+      }
+    }
+  }
+
+  function drawLevels() {
+    var box = clear($('curveLevels'));
+    var spec = setSpec(), key = currentSet, mea = measuredSet[key];
+    levels.forEach(function (L, i) {
+      var t = L.tier;
+      var tpl = t ? DF.TEMPLATES['t' + t] : null;
+      var isB = (spec.breathers || []).indexOf(L.id != null ? L.id : i + 1) >= 0;
+      var row = el('div', 'lvRow' + (isB ? ' breather' : ''), box);
+
+      var no = el('div', 'no', row);
+      no.innerHTML = '<b>' + (L.id != null ? L.id : i + 1) + '</b>' + (t ? 'bậc ' + t : '');
+      miniThumb(row, L);
+
+      var txt = el('div', 'txt', row);
+      el('div', 'feel', txt, tpl ? tpl.feel : 'bộ này không khai bậc');
+      var meta = el('div', 'meta', txt);
+      meta.innerHTML = L.cols + '×' + L.rows + ' · budget ' + L.moves +
+        (tpl ? ' · nhóm ' + tpl.group : '') +
+        (isB ? ' · <span class="bt">chỗ nghỉ chủ ý</span>' : '');
+
+      var barBox = el('div', null, row);
+      if (mea && mea[i]) {
+        winBars(barBox, { medians: mea[i] });
+      } else if (tpl) {
+        winBars(barBox, tpl);
+        el('div', 'meta', barBox, 'ước lượng theo bậc');
+      }
+    });
+  }
+
+  function renderCurveTab() {
+    if (!SETS) return;
+    var spec = setSpec();
+    $('curveWho').innerHTML = 'Bộ <b>' + (SET_WORD[currentSet] || spec.label) + '</b> — ' +
+      (spec.intent || '').replace(/<[^>]+>/g, '');
+    drawCompare();
+    drawActive();
+    drawLevels();
+  }
+
+  function measureWholeSet() {
+    var key = currentSet;
+    var btn = $('curveMeasure');
+    btn.disabled = true;
+    var items = levels.map(function (L, i) { return { at: i, level: JSON.parse(JSON.stringify(L)) }; });
+    var out = [], k = 0;
+    function step() {
+      if (k >= items.length) {
+        measuredSet[key] = out;
+        btn.disabled = false;
+        $('curveProgress').textContent = '';
+        renderCurveTab();
+        return;
+      }
+      $('curveProgress').textContent = (k + 1) + '/' + items.length;
+      setTimeout(function () {
+        var m = T.measure(items[k].level, 700);
+        out.push(m.valid ? { winCareful: m.winCareful, winAvg: m.winAvg, winSloppy: m.winSloppy } : null);
+        k++;
+        step();
+      }, 0);
+    }
+    step();
   }
 
   /* ---------------- result screen ---------------- */
@@ -2041,6 +2261,7 @@
     b.addEventListener('click', function () { setMode(b.dataset.mode); });
   });
   renderSetPick();
+  $('curveMeasure').addEventListener('click', measureWholeSet);
   $('journalClear').addEventListener('click', function () {
     global.Modal.open({
       title: 'Xoá nhật ký?',
@@ -2155,6 +2376,7 @@
       document.querySelector('.panel[data-panel="' + b.dataset.tab + '"]').classList.add('on');
       if (b.dataset.tab === 'set') renderSetTable();
       if (b.dataset.tab === 'journal') renderJournal();
+      if (b.dataset.tab === 'curve') renderCurveTab();
       if (b.dataset.tab === 'tune') { if (!lastMeasure) measureCurrent(); else renderTemplates(); }
     });
   });

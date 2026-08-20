@@ -545,3 +545,21 @@ body[data-mode="playtune"] #top { box-shadow: inset 0 2px 0 #7a52d0; }
 .sets button.on[data-set="medium"]  { background: #c98a1e; color: #1b1d24; }
 .sets button.on[data-set="medium"] span { color: rgba(0,0,0,.6); }
 .sets button.on[data-set="hard"]    { background: #c4453a; color: #fff; }
+
+/* ---------- difficulty curve tab ---------- */
+.lvRow { display: grid; grid-template-columns: auto 34px 1fr 180px; gap: 11px;
+         align-items: center; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.lvRow.breather { background: rgba(63,156,90,.07); }
+.lvRow .no { font-variant-numeric: tabular-nums; color: var(--ink-dim); font-size: 12px; text-align: center; }
+.lvRow .no b { display: block; color: var(--ink); font-size: 14px; }
+.lvRow .txt { min-width: 0; }
+.lvRow .feel { font-size: 12px; color: var(--ink); }
+.lvRow .meta { font-size: 11px; color: var(--ink-dim); margin-top: 2px; }
+.lvRow .meta .bt { color: var(--good); font-weight: 700; }
+.miniThumb { display: grid; gap: 1px; }
+.miniThumb i { display: block; width: 8px; height: 9px; border-radius: 2px; }
+.miniThumb i.stray { box-shadow: 0 0 0 1px #fff; }
+.miniThumb i.rev { background: #3a4050 !important; }
+.miniThumb i.hid { background: #12151d !important; box-shadow: inset 0 0 0 1px rgba(125,127,230,.6); }
+.legend { display: flex; gap: 12px; flex-wrap: wrap; font-size: 11px; color: var(--ink-dim); margin-top: 5px; }
+.legend i { display: inline-block; width: 10px; height: 3px; border-radius: 2px; margin-right: 4px; vertical-align: middle; }

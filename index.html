@@ -55,6 +55,7 @@
         <button class="playtune-only" data-tab="journal">Nhật ký</button>
         <button class="design-only" data-tab="tune">Tune</button>
         <button class="design-only" data-tab="edit">Edit</button>
+        <button data-tab="curve">Độ khó</button>
         <button data-tab="playtest">Playtest</button>
         <button class="design-only" data-tab="feel">Feel</button>
         <button data-tab="set">Level Set</button>
@@ -188,6 +189,21 @@
             <button id="genBtn">Generate vào level này</button>
           </div>
           <div class="hint">Sinh từ bàn đã giải rồi chỉ đổi chỗ 2 xe, nên luôn hợp lệ. <b>strays</b> = số lần đổi chỗ, là dial độ khó chính. Muốn có <b>choice</b> thật thì đặt số màu &lt; số cột — khi đó 2 cột cùng màu và player phải chọn.</div>
+        </div>
+
+        <div class="panel" data-panel="curve">
+          <div class="row">
+            <span class="hint" style="margin:0" id="curveWho"></span>
+            <span class="grow" style="flex:1"></span>
+            <button class="primary" id="curveMeasure">Đo cả bộ</button>
+            <span class="hint" id="curveProgress" style="margin:0"></span>
+          </div>
+          <h3>Bốn bộ cạnh nhau</h3>
+          <div id="curveCompare"></div>
+          <h3>Bộ đang chọn</h3>
+          <div id="curveActive"></div>
+          <h3>Từng level</h3>
+          <div id="curveLevels"></div>
         </div>
 
         <div class="panel" data-panel="playtest">

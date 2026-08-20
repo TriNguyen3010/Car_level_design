@@ -171,7 +171,17 @@ Một bộ là một **cách tiếp cận**, không phải một độ dốc. M�
 
 Số **đậm** là chỗ nghỉ chủ ý. Xu hướng đo được: **−4.41 / −2.15 / −4.89** điểm win mỗi level.
 
+Đổi bộ có hộp thoại xác nhận, ghi rõ đang đi từ đâu sang đâu, dải bậc hai bên, ý đồ bộ mới, và **sẽ chơi lại từ level 1**.
+
 Sinh lại: `node tools/make_sets.js && python3 tools/pack_sets.py`
+
+### Tab Độ khó
+
+Tab riêng, ưu tiên biểu đồ vì **một bộ cấp độ là một hình dạng**, mà hình dạng là thứ để nhìn — mười dòng số buộc người đọc tự dựng lại hình trong đầu.
+
+- **Bốn bộ cạnh nhau** — bốn đường trên cùng một trục bậc, bộ đang chọn vẽ đậm, chỗ nghỉ chủ ý là điểm tròn. Ba cách tiếp cận khác nhau nhìn ra ngay chứ không phải so ba bảng.
+- **Bộ đang chọn** — bậc là cột (cột xanh = chỗ nghỉ), **tỉ lệ thắng thật là đường vẽ trên đó**. Hai thứ này lệch nhau đủ thường xuyên nên chỉ vẽ bậc là gây hiểu sai. Bấm **Đo cả bộ** để thay ước lượng bằng số playtest thật.
+- **Từng level** — ảnh thu nhỏ bàn thật (xe viền trắng = xe lạ, ô tối = xe ẩn), câu cảm giác chơi của bậc đó, kích thước / budget / nhóm, và ba thanh win rate. Dòng chỗ nghỉ tô xanh.
 
 ### Hai thứ chỉ lộ ra khi kiểm chứng hình dạng
 
