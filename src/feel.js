@@ -45,27 +45,27 @@
 
   /* [key, label, min, max, step, unit] */
   var SLIDERS = [
-    ['insertDuration',   'Insert — xe bay lên đỉnh',      60, 700, 10, 'ms'],
-    ['insertEase',       'Insert easing',                 null, null, null, 'ease'],
-    ['cascadeDuration',  'Cascade — cả cột dồn xuống',    60, 600, 10, 'ms'],
-    ['cascadeStagger',   'Cascade stagger / hàng',         0, 120,  2, 'ms'],
-    ['cascadeEase',      'Cascade easing',                null, null, null, 'ease'],
-    ['ejectDuration',    'Eject — xe đáy văng ra pad',    60, 800, 10, 'ms'],
-    ['ejectEase',        'Eject easing',                  null, null, null, 'ease'],
-    ['autoSortDelay',    'Auto-sort delay',                0, 800, 10, 'ms'],
-    ['autoSortDuration', 'Auto-sort duration',            60, 800, 10, 'ms'],
-    ['autoSortEase',     'Auto-sort easing',              null, null, null, 'ease'],
-    ['completeDelay',    'Complete delay',                 0, 600, 10, 'ms'],
-    ['completePop',      'Complete pop scale',             1, 1.5, 0.01, 'x'],
-    ['completeDuration', 'Complete duration',             60, 800, 10, 'ms'],
-    ['inputLock',        'Input lock sau mỗi tap',         0, 800, 10, 'ms'],
-    ['padBob',           'Pad idle bob',                   0,  12,  1, 'px'],
-    ['padBobDuration',   'Pad bob chu kỳ',               400,4000,100, 'ms'],
-    ['carScale',         'Car scale trong ô',            0.6,   1, 0.01, 'x'],
-    ['cellGap',          'Cell gap',                       0, 0.2, 0.005, 'x'],
-    ['shadowStrength',   'Shadow',                         0,   1, 0.02, ''],
-    ['sfxVolume',        'SFX volume',                     0,   1, 0.02, ''],
-    ['shapeCount',       'Số kiểu dáng xe dùng',           1,   9,  1, ' kiểu']
+    ['insertDuration',   { vi: 'Insert — xe bay lên đỉnh', en: 'Insert — car flies to the top' },      60, 700, 10, 'ms'],
+    ['insertEase',       { vi: 'Insert easing', en: 'Insert easing' },                 null, null, null, 'ease'],
+    ['cascadeDuration',  { vi: 'Cascade — cả cột dồn xuống', en: 'Cascade — column shifts down' },    60, 600, 10, 'ms'],
+    ['cascadeStagger',   { vi: 'Cascade stagger / hàng', en: 'Cascade stagger per row' },         0, 120,  2, 'ms'],
+    ['cascadeEase',      { vi: 'Cascade easing', en: 'Cascade easing' },                null, null, null, 'ease'],
+    ['ejectDuration',    { vi: 'Eject — xe đáy văng ra pad', en: 'Eject — bottom car to the pad' },    60, 800, 10, 'ms'],
+    ['ejectEase',        { vi: 'Eject easing', en: 'Eject easing' },                  null, null, null, 'ease'],
+    ['autoSortDelay',    { vi: 'Auto-sort delay', en: 'Auto-sort delay' },                0, 800, 10, 'ms'],
+    ['autoSortDuration', { vi: 'Auto-sort duration', en: 'Auto-sort duration' },            60, 800, 10, 'ms'],
+    ['autoSortEase',     { vi: 'Auto-sort easing', en: 'Auto-sort easing' },              null, null, null, 'ease'],
+    ['completeDelay',    { vi: 'Complete delay', en: 'Complete delay' },                 0, 600, 10, 'ms'],
+    ['completePop',      { vi: 'Complete pop scale', en: 'Complete pop scale' },             1, 1.5, 0.01, 'x'],
+    ['completeDuration', { vi: 'Complete duration', en: 'Complete duration' },             60, 800, 10, 'ms'],
+    ['inputLock',        { vi: 'Input lock sau mỗi tap', en: 'Input lock after each tap' },         0, 800, 10, 'ms'],
+    ['padBob',           { vi: 'Pad idle bob', en: 'Pad idle bob' },                   0,  12,  1, 'px'],
+    ['padBobDuration',   { vi: 'Pad bob chu kỳ', en: 'Pad bob period' },               400,4000,100, 'ms'],
+    ['carScale',         { vi: 'Car scale trong ô', en: 'Car scale in cell' },            0.6,   1, 0.01, 'x'],
+    ['cellGap',          { vi: 'Cell gap', en: 'Cell gap' },                       0, 0.2, 0.005, 'x'],
+    ['shadowStrength',   { vi: 'Shadow', en: 'Shadow' },                         0,   1, 0.02, ''],
+    ['sfxVolume',        { vi: 'SFX volume', en: 'SFX volume' },                     0,   1, 0.02, ''],
+    ['shapeCount',       { vi: 'Số kiểu dáng xe dùng', en: 'Car shapes in play' },           1,   9,  1, ' kiểu']
   ];
 
   var PRESETS = {

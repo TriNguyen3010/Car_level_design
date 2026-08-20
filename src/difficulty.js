@@ -55,41 +55,65 @@
   ];
 
   var GROUPS = [
-    { name: 'Tập lái', axis: 'dạy luật',
-      focus: 'Mỗi màu đúng một cột nên xe văng ra tự chỉ đường cho nước sau, và mỗi cột chỉ một xe lạ nên auto-sort lo hết. Player chỉ cần hiểu "tap cột cùng màu".',
-      why: 'Budget rộng gấp 2–3 lần lời giải để cả người bấm ẩu cũng không thua. Thua ở đây không dạy được gì — player chưa biết mình sai ở đâu.' },
-    { name: 'Giờ cao điểm', axis: 'sức ép budget',
-      focus: 'Giữ cấu trúc dễ đọc — mỗi màu một cột — rồi siết budget dần. Player thua vì <b>tiêu move phí</b>, không vì bí đường.',
-      why: 'Game không có ngõ cụt nên budget là nguồn thua duy nhất. Đây là nơi booster Undo có lý do tồn tại: mỗi nước sai ăn thẳng vào budget. Đo được: bậc 3 đến 5 gần như không làm player giỏi thua, nhưng player ẩu tụt từ 59% xuống 39%.' },
-    { name: 'Bãi chật', axis: 'độ sâu định tuyến',
-      focus: 'Số màu <b>ít hơn</b> số cột nên có cột trùng màu và player phải chọn nhả xe vào đâu. Mật độ xe lạ cao để nhiều cột có ≥2 xe lạ — auto-sort im lặng.',
-      why: 'Bật trục này làm level <b>sâu hơn nhưng hơi dễ hơn</b>: nhiều cột nhận được xe trên pad hơn nên bớt move phí. Đo trực tiếp — ở slack 1.48 bậc 6 ra dễ hơn bậc 5. Nên slack phải tiếp tục siết qua khúc chuyển này, không thì thang đứng lại.' },
-    { name: 'Giờ đêm', axis: 'thiếu thông tin, cộng dồn',
-      focus: 'Ẩn 18–26% bàn, cộng lên trên cả hai trục kia, budget siết gần sát lời giải.',
-      why: 'Xe ẩn lộ ngay khi cột bị tap nên một mình nó yếu — chỉ chặn được lượt lập kế hoạch đầu của mỗi cột. Nó chỉ thành trục thật khi budget đã rất chặt: lúc đó nước tap để dò màu cũng là nước tiêu budget. Đừng quá 30% bàn, quá ngưỡng đó thành đoán chứ không phải chơi.' }
+    { name: { vi: 'Tập lái', en: 'Learner' }, axis: { vi: 'dạy luật', en: 'teaching the rules' },
+      focus: { vi: 'Mỗi màu đúng một cột nên xe văng ra tự chỉ đường cho nước sau, và mỗi cột chỉ một xe lạ nên auto-sort lo hết. Player chỉ cần hiểu "tap cột cùng màu".',
+               en: 'One colour per column, so the ejected car points at the next move, and one stray per column, so auto-sort handles it. The player only needs "tap the matching column".' },
+      why: { vi: 'Budget rộng gấp 2–3 lần lời giải để cả người bấm ẩu cũng không thua. Thua ở đây không dạy được gì — player chưa biết mình sai ở đâu.',
+             en: 'Budget two to three times the solution so even careless play survives. Losing here teaches nothing — the player cannot yet tell what went wrong.' } },
+    { name: { vi: 'Giờ cao điểm', en: 'Rush Hour' }, axis: { vi: 'sức ép budget', en: 'budget pressure' },
+      focus: { vi: 'Giữ cấu trúc dễ đọc — mỗi màu một cột — rồi siết budget dần. Player thua vì <b>tiêu move phí</b>, không vì bí đường.',
+               en: 'Keep the readable structure — one colour per column — and tighten the budget. The player loses to <b>wasted moves</b>, not to being stuck.' },
+      why: { vi: 'Game không có ngõ cụt nên budget là nguồn thua duy nhất. Đây là nơi booster Undo có lý do tồn tại: mỗi nước sai ăn thẳng vào budget. Đo được: bậc 3 đến 5 gần như không làm player giỏi thua, nhưng player ẩu tụt từ 59% xuống 39%.',
+             en: 'The game has no dead ends, so the budget is the only source of failure. This is where the Undo booster earns its place: every wrong move eats budget directly. Measured: steps 3 to 5 barely trouble a careful player, while the careless one falls from 59% to 39%.' } },
+    { name: { vi: 'Bãi chật', en: 'Tight Lot' }, axis: { vi: 'độ sâu định tuyến', en: 'routing depth' },
+      focus: { vi: 'Số màu <b>ít hơn</b> số cột nên có cột trùng màu và player phải chọn nhả xe vào đâu. Mật độ xe lạ cao để nhiều cột có ≥2 xe lạ — auto-sort im lặng.',
+               en: 'Fewer colours <b>than</b> columns, so columns share a colour and the player must choose where to drop. High stray density puts 2+ strays in many columns — auto-sort stays silent.' },
+      why: { vi: 'Bật trục này làm level <b>sâu hơn nhưng hơi dễ hơn</b>: nhiều cột nhận được xe trên pad hơn nên bớt move phí. Đo trực tiếp — ở slack 1.48 bậc 6 ra dễ hơn bậc 5. Nên slack phải tiếp tục siết qua khúc chuyển này, không thì thang đứng lại.',
+             en: 'Turning this axis on makes a level <b>deeper but slightly easier</b>: more columns accept the pad car, so fewer moves are wasted. Measured directly — at slack 1.48, step 6 came out easier than step 5. Slack has to keep tightening through this transition or the ladder stalls.' } },
+    { name: { vi: 'Giờ đêm', en: 'Night Shift' }, axis: { vi: 'thiếu thông tin, cộng dồn', en: 'missing information, stacked' },
+      focus: { vi: 'Ẩn 18–26% bàn, cộng lên trên cả hai trục kia, budget siết gần sát lời giải.',
+               en: 'Hide 18–26% of the board on top of both other axes, with the budget close to the solution.' },
+      why: { vi: 'Xe ẩn lộ ngay khi cột bị tap nên một mình nó yếu — chỉ chặn được lượt lập kế hoạch đầu của mỗi cột. Nó chỉ thành trục thật khi budget đã rất chặt: lúc đó nước tap để dò màu cũng là nước tiêu budget. Đừng quá 30% bàn, quá ngưỡng đó thành đoán chứ không phải chơi.',
+             en: 'Hidden cars reveal the moment their column is tapped, so alone they are weak — they only block the first planning turn per column. They become a real axis once the budget is very tight: then a probing tap is also a spent move. Do not exceed 30% of the board; past that it is guessing, not playing.' } }
   ];
 
   /* One line per step, in the language of playing rather than of knobs.
    * "budget rộng gấp 2-3 lần lời giải" tells you nothing unless you already
    * hold the mechanics in your head; "bấm sai 3 lần là thua" you can feel. */
   var FEEL = [
-    'Không thể thua. Nhìn màu, tap đúng cột, xong.',
-    'Vẫn khó thua, nhưng bấm bừa thì bắt đầu hết move.',
-    'Bấm sai 5–6 lần mới thua. Vừa đủ để player học rằng move có giá.',
-    'Bấm sai 3–4 lần là thua. Người chơi cẩn thận vẫn qua dễ.',
-    'Bấm sai 2–3 lần là thua. Đây là chỗ Undo bắt đầu đáng tiền.',
-    'Có cột trùng màu — lần đầu player phải chọn, không còn đi theo dây.',
-    'Chọn cột sai tốn 3–4 move dọn, mà budget chỉ dư hơn 25%.',
-    'Nhiều cột có 2–3 xe lạ, auto-sort im lặng. Phải tự tính thứ tự moi ra.',
-    'Gần 1/5 bàn không thấy màu. Tap để dò màu cũng là tap tiêu move.',
-    'Một phần tư bàn bị ẩn, budget chỉ dư 10%. Sai một nước là xong.'
+    { vi: 'Không thể thua. Nhìn màu, tap đúng cột, xong.',
+      en: 'Cannot be lost. Read the colour, tap the right column, done.' },
+    { vi: 'Vẫn khó thua, nhưng bấm bừa thì bắt đầu hết move.',
+      en: 'Still hard to lose, but careless tapping starts running the budget out.' },
+    { vi: 'Bấm sai 5–6 lần mới thua. Vừa đủ để player học rằng move có giá.',
+      en: 'Five or six wrong taps to lose — just enough to teach that moves cost something.' },
+    { vi: 'Bấm sai 3–4 lần là thua. Người chơi cẩn thận vẫn qua dễ.',
+      en: 'Three or four wrong taps and it is lost. A careful player still clears it easily.' },
+    { vi: 'Bấm sai 2–3 lần là thua. Đây là chỗ Undo bắt đầu đáng tiền.',
+      en: 'Two or three wrong taps and it is lost. This is where Undo starts being worth money.' },
+    { vi: 'Có cột trùng màu — lần đầu player phải chọn, không còn đi theo dây.',
+      en: 'Two columns share a colour — the first time the player must choose rather than follow the chain.' },
+    { vi: 'Chọn cột sai tốn 3–4 move dọn, mà budget chỉ dư hơn 25%.',
+      en: 'A wrong column costs three or four moves to clean up, on barely 25% spare budget.' },
+    { vi: 'Nhiều cột có 2–3 xe lạ, auto-sort im lặng. Phải tự tính thứ tự moi ra.',
+      en: 'Several columns hold two or three strays, so auto-sort stays silent. You work out the order yourself.' },
+    { vi: 'Gần 1/5 bàn không thấy màu. Tap để dò màu cũng là tap tiêu move.',
+      en: 'Nearly a fifth of the board is unreadable. Tapping to find out also spends budget.' },
+    { vi: 'Một phần tư bàn bị ẩn, budget chỉ dư 10%. Sai một nước là xong.',
+      en: 'A quarter of the board is hidden on 10% spare budget. One wrong move ends it.' }
   ];
 
   var WHEN = [
-    'Level 1–4, dạy luật.', 'Level 5–8.',
-    'Level 9–16.', 'Level 17–24.', 'Level 25–34.',
-    'Level 35–45.', 'Level 46–58.', 'Level 59–72.',
-    'Level 73–88, nên gate bằng booster.', 'Level 89+ hoặc daily challenge.'
+    { vi: 'Level 1–4, dạy luật.', en: 'Levels 1–4, teaching the rules.' },
+    { vi: 'Level 5–8.', en: 'Levels 5–8.' },
+    { vi: 'Level 9–16.', en: 'Levels 9–16.' },
+    { vi: 'Level 17–24.', en: 'Levels 17–24.' },
+    { vi: 'Level 25–34.', en: 'Levels 25–34.' },
+    { vi: 'Level 35–45.', en: 'Levels 35–45.' },
+    { vi: 'Level 46–58.', en: 'Levels 46–58.' },
+    { vi: 'Level 59–72.', en: 'Levels 59–72.' },
+    { vi: 'Level 73–88, nên gate bằng booster.', en: 'Levels 73–88; gate with boosters.' },
+    { vi: 'Level 89+ hoặc daily challenge.', en: 'Levels 89+, or a daily challenge.' }
   ];
 
   function clamp01(v) { return Math.max(0, Math.min(1, v)); }
@@ -104,7 +128,7 @@
       out['t' + tier] = {
         tier: tier,
         group: g.name,
-        name: 'Bậc ' + tier + ' · ' + g.name,
+        name: { vi: 'Bậc ' + tier + ' · ' + g.name.vi, en: 'Step ' + tier + ' · ' + g.name.en },
         axis: g.axis,
         feel: FEEL[i],
         focus: g.focus,
@@ -130,8 +154,13 @@
   var TEMPLATES = buildLadder();
 
   var LABELS = {
-    winCareful: 'win — giỏi', winAvg: 'win — trung bình', winSloppy: 'win — ẩu',
-    depth: 'độ sâu', dumpRatio: 'dump', slack: 'slack', hiddenRatio: 'tỉ lệ xe ẩn'
+    winCareful: { vi: 'win — giỏi', en: 'win — careful' },
+    winAvg: { vi: 'win — trung bình', en: 'win — average' },
+    winSloppy: { vi: 'win — ẩu', en: 'win — careless' },
+    depth: { vi: 'độ sâu', en: 'depth' },
+    dumpRatio: { vi: 'dump', en: 'dump' },
+    slack: { vi: 'slack', en: 'slack' },
+    hiddenRatio: { vi: 'tỉ lệ xe ẩn', en: 'hidden ratio' }
   };
   var AS_PCT = { winCareful: 1, winAvg: 1, winSloppy: 1, dumpRatio: 1, hiddenRatio: 1 };
 
@@ -158,7 +187,7 @@
       var ok = v != null && v >= band[0] - 1e-9 && v <= band[1] + 1e-9;
       if (ok) pass++;
       rows.push({
-        key: k, label: LABELS[k] || k, ok: ok,
+        key: k, label: (global.I18N ? global.I18N.L(LABELS[k]) : (LABELS[k] && LABELS[k].vi)) || k, ok: ok,
         value: fmt(k, v),
         band: fmt(k, band[0]) + ' – ' + fmt(k, band[1]),
         low: v != null && v < band[0]
@@ -359,9 +388,9 @@
     if (!tpl) return null;
     var needC = tpl.minCols || 2, needR = tpl.minRows || 2;
     if (level.cols >= needC && level.rows >= needR) return null;
-    return 'Bàn ' + level.cols + '×' + level.rows + ' nhỏ hơn mức tối thiểu ' +
-           needC + '×' + needR + ' của tier này. Bàn ngắn thì lời giải ngắn, ' +
-           'nên không đủ số nước để player kịp thua — siết knob nào cũng không tới dải mục tiêu.';
+    return global.I18N
+      ? global.I18N.m('dGrowBoard', level.cols + '×' + level.rows, needC + '×' + needR, needC + '×' + needR)
+      : 'board too small';
   }
 
   /* Re-budget an existing level to a tier's slack without touching its grid. */

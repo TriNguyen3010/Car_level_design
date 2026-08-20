@@ -6,14 +6,21 @@ Kept as a script so the campaigns are reproducible rather than hand-maintained:
 import json
 
 sets = json.load(open('/tmp/sets.json'))
-ORDER = [('easy', 'Dẫn tay', 'Dễ'), ('medium', 'Nhịp', 'Trung'), ('hard', 'Thử ngay', 'Khó')]
+ORDER = [
+    ('easy',   ('Dẫn tay', 'Hand-holding'),  ('Dễ', 'Easy')),
+    ('medium', ('Nhịp', 'Rhythm'),           ('Trung', 'Medium')),
+    ('hard',   ('Thử ngay', 'Straight In'),  ('Khó', 'Hard')),
+]
 
 # Kept to one line each. The full reasoning lives in README.md — a tooltip and a
 # panel header are not the place for three sentences.
 INTENT = {
-    'easy': 'Không ai được thua. Mỗi cơ chế mới xong thì hạ bậc cho player làm lại dễ.',
-    'medium': 'Độ khó có nhịp. Leo 2–3 level rồi thả 1. Level 10 không phải đỉnh.',
-    'hard': 'Lọc player đã quen thể loại. Đỉnh sớm ở level 3, kết đúng ở đỉnh.',
+    'easy': ('Không ai được thua. Mỗi cơ chế mới xong thì hạ bậc cho player làm lại dễ.',
+             'Nobody loses. After each new mechanic the next level drops so the player redoes it easily.'),
+    'medium': ('Độ khó có nhịp. Leo 2–3 level rồi thả 1. Level 10 không phải đỉnh.',
+               'Difficulty has rhythm. Climb two or three levels, then release one. Level 10 is not the peak.'),
+    'hard': ('Lọc player đã quen thể loại. Đỉnh sớm ở level 3, kết đúng ở đỉnh.',
+             'Filters for players who know the genre. An early peak at level 3, and it ends on its peak.'),
 }
 # No per-campaign note. Explanatory text next to a chart competes with the chart
 # and loses — the Độ khó tab already shows the shape. The intent survives only in
@@ -74,8 +81,8 @@ HEAD = """/* Four campaigns over the same ten levels.
 
   var SETS = {
     'default': {
-      name: 'Gốc',
-      label: 'Mặc định',
+      name: { vi: 'Gốc', en: 'Original' },
+      label: { vi: 'Mặc định', en: 'Default' },
       intent: 'Dựng từ ảnh chụp game tham chiếu. Budget rộng 2.5–8.6x — gần như không thể thua.',
       note: '',
       rhythmOn: 'winAvg',
@@ -87,10 +94,10 @@ out = [HEAD]
 for key, name, label in ORDER:
     d = sets[key]
     out.append("    '%s': {" % key)
-    out.append("      name: '%s'," % name)
-    out.append("      label: '%s'," % label)
-    out.append("      intent:")
-    out += js_string_block(INTENT[key], '        ')
+    out.append("      name: { vi: '%s', en: '%s' }," % name)
+    out.append("      label: { vi: '%s', en: '%s' }," % label)
+    out.append("      intent: { vi: '%s'," % INTENT[key][0].replace("'", "\\'"))
+    out.append("                en: '%s' }," % INTENT[key][1].replace("'", "\\'"))
     out.append("      note: '',")
     out.append("      rhythmOn: '%s'," % RHYTHM[key])
     out.append("      breathers: %s," % json.dumps(d['breathers']))

@@ -256,48 +256,68 @@
     var step = Math.max(2, Math.round(cells * 0.22));
 
     if (dir === 'harder') {
-      out.push({ key: 'colors-', lever: 'Số màu',
-        label: 'Gộp 2 màu: ' + base.colors + ' → ' + (base.colors - 1) + ' màu',
-        why: 'Tăng ĐỘ SÂU chứ thường không tăng độ khó: 2 cột cùng màu cho player nhiều chỗ nhả xe đúng hơn nên ít move phí. Dùng khi level bị chê nhạt chứ không phải khi cần siết.',
+      out.push({ key: 'colors-', lever: { vi: 'Số màu', en: 'Colours' },
+        label: { vi: 'Gộp 2 màu: ' + base.colors + ' → ' + (base.colors - 1) + ' màu',
+                 en: 'Merge two colours: ' + base.colors + ' → ' + (base.colors - 1) },
+        why: { vi: 'Tăng ĐỘ SÂU chứ thường không tăng độ khó: 2 cột cùng màu cho player nhiều chỗ nhả xe đúng hơn nên ít move phí. Dùng khi level bị chê nhạt chứ không phải khi cần siết.',
+               en: 'Raises DEPTH, usually not difficulty: two columns of one colour give the player more correct places to drop, so fewer moves are wasted. Use it when a level feels bland, not when it needs tightening.' },
         level: mergeColors(L) });
-      out.push({ key: 'strays+', lever: 'Xe lạ',
-        label: 'Thêm ' + step + ' xe lạ (' + base.strays + ' → ~' + (base.strays + step) + ')',
-        why: 'Cột có ≥2 xe lạ thì auto-sort không kích, player phải tự lo thứ tự.',
+      out.push({ key: 'strays+', lever: { vi: 'Xe lạ', en: 'Strays' },
+        label: { vi: 'Thêm ' + step + ' xe lạ (' + base.strays + ' → ~' + (base.strays + step) + ')',
+                 en: 'Add ' + step + ' strays (' + base.strays + ' → ~' + (base.strays + step) + ')' },
+        why: { vi: 'Cột có ≥2 xe lạ thì auto-sort không kích, player phải tự lo thứ tự.',
+               en: 'With 2+ strays in a column auto-sort never fires, so the player works out the order.' },
         level: addStrays(L, step, 11) });
-      out.push({ key: 'budget-', lever: 'Move budget',
-        label: 'Siết budget ' + L.moves + ' → ' + Math.ceil(opt * 1.35) + ' (slack 1.35x)',
-        why: 'Biến move count thành sức ép thật thay vì con số trang trí.',
+      out.push({ key: 'budget-', lever: { vi: 'Move budget', en: 'Move budget' },
+        label: { vi: 'Siết budget ' + L.moves + ' → ' + Math.ceil(opt * 1.35) + ' (slack 1.35x)',
+                 en: 'Tighten budget ' + L.moves + ' → ' + Math.ceil(opt * 1.35) + ' (slack 1.35x)' },
+        why: { vi: 'Biến move count thành sức ép thật thay vì con số trang trí.',
+               en: 'Turns the move count into real pressure instead of decoration.' },
         level: setSlack(L, 1.35, opt) });
-      out.push({ key: 'hidden+', lever: 'Xe ẩn',
-        label: 'Xe ẩn ' + base.hidden + ' → ' + (base.hidden + Math.max(2, Math.round(cells * 0.12))),
-        why: 'Chặn lập kế hoạch. Ẩn lộ ngay khi cột bị tap nên tác dụng ngắn, đừng lạm dụng.',
+      out.push({ key: 'hidden+', lever: { vi: 'Xe ẩn', en: 'Hidden cars' },
+        label: { vi: 'Xe ẩn ' + base.hidden + ' → ' + (base.hidden + Math.max(2, Math.round(cells * 0.12))),
+                 en: 'Hidden cars ' + base.hidden + ' → ' + (base.hidden + Math.max(2, Math.round(cells * 0.12))) },
+        why: { vi: 'Chặn lập kế hoạch. Ẩn lộ ngay khi cột bị tap nên tác dụng ngắn, đừng lạm dụng.',
+               en: 'Blocks planning. Hidden cars reveal as soon as their column is tapped, so the effect is brief — do not overuse it.' },
         level: setHidden(L, base.hidden + Math.max(2, Math.round(cells * 0.12)), 17) });
-      out.push({ key: 'rows+', lever: 'Kích thước',
-        label: 'Thêm 1 hàng: ' + L.cols + '×' + L.rows + ' → ' + L.cols + '×' + (L.rows + 1),
-        why: 'Cột dài hơn ⇒ xe lạ nằm sâu hơn ⇒ tốn nhiều move để moi ra. Sinh lại layout.',
+      out.push({ key: 'rows+', lever: { vi: 'Kích thước', en: 'Board size' },
+        label: { vi: 'Thêm 1 hàng: ' + L.cols + '×' + L.rows + ' → ' + L.cols + '×' + (L.rows + 1),
+                 en: 'Add a row: ' + L.cols + '×' + L.rows + ' → ' + L.cols + '×' + (L.rows + 1) },
+        why: { vi: 'Cột dài hơn ⇒ xe lạ nằm sâu hơn ⇒ tốn nhiều move để moi ra. Sinh lại layout.',
+               en: 'Longer columns bury strays deeper, so digging them out costs more moves. Regenerates the layout.' },
         level: resize(L, 0, 1, palette) });
     } else {
-      out.push({ key: 'colors+', lever: 'Số màu',
-        label: 'Tách thêm 1 màu: ' + base.colors + ' → ' + (base.colors + 1) + ' màu',
-        why: 'Giảm ĐỘ SÂU: mỗi màu 1 cột riêng ⇒ xe văng ra chỉ hợp đúng 1 cột ⇒ chuỗi tự dẫn đường. Cảnh báo: có thể làm tỉ lệ thua TĂNG vì ít chỗ nhả xe đúng hơn.',
+      out.push({ key: 'colors+', lever: { vi: 'Số màu', en: 'Colours' },
+        label: { vi: 'Tách thêm 1 màu: ' + base.colors + ' → ' + (base.colors + 1) + ' màu',
+                 en: 'Split off a colour: ' + base.colors + ' → ' + (base.colors + 1) },
+        why: { vi: 'Giảm ĐỘ SÂU: mỗi màu 1 cột riêng ⇒ xe văng ra chỉ hợp đúng 1 cột ⇒ chuỗi tự dẫn đường. Cảnh báo: có thể làm tỉ lệ thua TĂNG vì ít chỗ nhả xe đúng hơn.',
+               en: 'Lowers DEPTH: one column per colour means the ejected car fits exactly one place and the chain leads itself. Warning — it can RAISE the loss rate, since there are fewer correct places to drop.' },
         level: splitColors(L, palette) });
-      out.push({ key: 'strays-', lever: 'Xe lạ',
-        label: 'Bớt ' + step + ' xe lạ (' + base.strays + ' → ~' + Math.max(1, base.strays - step) + ')',
-        why: 'Cột chỉ còn 1 xe lạ thì auto-sort lo hết, tap 1 phát là xong cột.',
+      out.push({ key: 'strays-', lever: { vi: 'Xe lạ', en: 'Strays' },
+        label: { vi: 'Bớt ' + step + ' xe lạ (' + base.strays + ' → ~' + Math.max(1, base.strays - step) + ')',
+                 en: 'Remove ' + step + ' strays (' + base.strays + ' → ~' + Math.max(1, base.strays - step) + ')' },
+        why: { vi: 'Cột chỉ còn 1 xe lạ thì auto-sort lo hết, tap 1 phát là xong cột.',
+               en: 'With one stray left, auto-sort handles it and a single tap finishes the column.' },
         level: removeStrays(L, step) });
-      out.push({ key: 'budget+', lever: 'Move budget',
-        label: 'Nới budget ' + L.moves + ' → ' + Math.ceil(opt * 2.2) + ' (slack 2.2x)',
-        why: 'Cho phép sai vài nước mà không thua.',
+      out.push({ key: 'budget+', lever: { vi: 'Move budget', en: 'Move budget' },
+        label: { vi: 'Nới budget ' + L.moves + ' → ' + Math.ceil(opt * 2.2) + ' (slack 2.2x)',
+                 en: 'Loosen budget ' + L.moves + ' → ' + Math.ceil(opt * 2.2) + ' (slack 2.2x)' },
+        why: { vi: 'Cho phép sai vài nước mà không thua.',
+               en: 'Allows a few wrong moves without losing.' },
         level: setSlack(L, 2.2, opt) });
       if (base.hidden > 0) {
-        out.push({ key: 'hidden-', lever: 'Xe ẩn',
-          label: 'Xe ẩn ' + base.hidden + ' → ' + Math.max(0, base.hidden - Math.max(2, Math.round(cells * 0.12))),
-          why: 'Trả lại thông tin để player lập kế hoạch được.',
+        out.push({ key: 'hidden-', lever: { vi: 'Xe ẩn', en: 'Hidden cars' },
+          label: { vi: 'Xe ẩn ' + base.hidden + ' → ' + Math.max(0, base.hidden - Math.max(2, Math.round(cells * 0.12))),
+                   en: 'Hidden cars ' + base.hidden + ' → ' + Math.max(0, base.hidden - Math.max(2, Math.round(cells * 0.12))) },
+          why: { vi: 'Trả lại thông tin để player lập kế hoạch được.',
+                 en: 'Gives information back so the player can plan.' },
           level: setHidden(L, Math.max(0, base.hidden - Math.max(2, Math.round(cells * 0.12))), 17) });
       }
-      out.push({ key: 'rows-', lever: 'Kích thước',
-        label: 'Bớt 1 hàng: ' + L.cols + '×' + L.rows + ' → ' + L.cols + '×' + (L.rows - 1),
-        why: 'Cột ngắn hơn ⇒ moi xe lạ ra rẻ hơn. Sinh lại layout.',
+      out.push({ key: 'rows-', lever: { vi: 'Kích thước', en: 'Board size' },
+        label: { vi: 'Bớt 1 hàng: ' + L.cols + '×' + L.rows + ' → ' + L.cols + '×' + (L.rows - 1),
+                 en: 'Remove a row: ' + L.cols + '×' + L.rows + ' → ' + L.cols + '×' + (L.rows - 1) },
+        why: { vi: 'Cột ngắn hơn ⇒ moi xe lạ ra rẻ hơn. Sinh lại layout.',
+               en: 'Shorter columns make digging out a stray cheaper. Regenerates the layout.' },
         level: resize(L, 0, -1, palette) });
     }
     return out.filter(function (x) {

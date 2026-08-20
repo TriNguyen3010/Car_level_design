@@ -34,7 +34,7 @@
     if (opts.body) body.innerHTML = opts.body;
 
     var foot = el('div', 'modal-foot', card);
-    (opts.actions || [{ label: 'Đóng' }]).forEach(function (a) {
+    (opts.actions || [{ label: (global.I18N ? global.I18N.t('close') : 'Close') }]).forEach(function (a) {
       var b = el('button', a.primary ? 'primary' : (a.danger ? 'danger' : ''), foot, a.label);
       b.addEventListener('click', function () {
         if (a.keepOpen) { if (a.fn) a.fn(); return; }

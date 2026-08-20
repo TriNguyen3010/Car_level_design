@@ -154,6 +154,17 @@ Mọi chỉ số đều có dấu <b>?</b> bấm được, mở ra giải thích
 
 `choice` là dial độ khó chính, không phải grid size. Cách tăng nó: **đặt số màu ít hơn số cột** — khi 2 cột cùng màu thì player phải chọn cột nào để nhả xe.
 
+## Song ngữ
+
+Nút **EN / VI** ở thanh header, ghi nhớ trong localStorage. Hai cơ chế, cố ý tách:
+
+- `I18N.t('key')` — nhãn và chuỗi ngắn, gom hết trong `src/i18n.js` (228 key) nên thiếu một cái là thấy ngay.
+- `I18N.L({vi, en})` — nội dung dài **nằm cùng module nó thuộc về**: giải thích của một bậc ở `difficulty.js`, ý đồ của một bộ ở `sets.js`, 19 topic help ở `help.js`. Bê chúng sang một file dịch riêng là tách khỏi thứ chúng miêu tả.
+
+Câu ghép đi qua `I18N.m('key', a, b)` với template `{0}` (152 template). **Không dịch từng mảnh ghép chuỗi** — trật tự từ hai thứ tiếng khác nhau, dán các mảnh đã dịch lại ra câu vô nghĩa.
+
+Một cái bẫy gặp thật khi làm: alias `t` và `L` va với tên biến sẵn có trong `tool.js` (`t` là một bậc, `L` là một level), nên trong callback chúng bị shadow và nổ `t is not a function`. Alias đổi thành `tr` và `loc`.
+
 ## Bốn bộ cấp độ
 
 Chọn bằng nhóm nút cùng hàng với 3 chế độ: `Gốc` · `Dễ` · `Trung bình` · `Khó`, mỗi nút kèm dải bậc `1→4` / `1→7` / `2→10` và tô màu theo độ khó. **Đổi bộ là về level 1** — mỗi bộ là một curve khác, giữ số level cũ sẽ rơi vào giữa ramp của bộ mới.

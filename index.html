@@ -17,25 +17,25 @@
   <div id="top">
     <div class="hdr-row">
       <div class="hdr-left">
-        <button id="prevLv" title="Level trước">◀</button>
-        <span class="badge">Level <b id="lvName">1</b> <span id="lvCount" style="color:var(--ink-dim)"></span></span>
-        <button id="nextLv" title="Level sau">▶</button>
+        <button id="prevLv" data-i18n-title="prevLevel">◀</button>
+        <span class="badge"><span data-i18n="level">Level</span> <b id="lvName">1</b> <span id="lvCount" style="color:var(--ink-dim)"></span></span>
+        <button id="nextLv" data-i18n-title="nextLevel">▶</button>
         <span class="sep"></span>
         <span class="badge" id="movesBadge">Moves <b>0</b></span>
         <span class="badge" id="sizeBadge">4×4</span>
         <span class="sep"></span>
-        <button id="restart">Restart</button>
-        <button id="undo">Undo</button>
-        <button id="hint">Hint</button>
-        <button id="autoplay">Autoplay</button>
+        <button id="restart" data-i18n="restart">Restart</button>
+        <button id="undo" data-i18n="undo">Undo</button>
+        <button id="hint" data-i18n="hint">Hint</button>
+        <button id="autoplay" data-i18n="autoplay">Autoplay</button>
         <span class="sep"></span>
-        <button id="boardToggle" title="Ẩn/hiện khung puzzle — chỉ là hiển thị, không ảnh hưởng logic (phím B)"></button>
+        <button id="boardToggle" data-i18n-title="boardToggleT"></button>
       </div>
       <div class="hdr-right">
         <span class="modes" id="modeSwitch">
-          <button data-mode="test" title="Chỉ chơi và đọc chỉ số, không sửa được gì">▶ Test</button>
-          <button data-mode="playtune" title="Chơi rồi nâng/hạ bậc ngay tại bàn, ghi nhật ký">🎮 Chơi &amp; cân</button>
-          <button data-mode="design" title="Sửa lưới, cân độ khó, game feel">⚙ Level Design</button>
+          <button data-mode="test" data-i18n-title="modeTestT" data-i18n="modeTest">▶ Test</button>
+          <button data-mode="playtune" data-i18n-title="modePlaytuneT" data-i18n="modePlaytune">🎮 Chơi &amp; cân</button>
+          <button data-mode="design" data-i18n-title="modeDesignT" data-i18n="modeDesign">⚙ Level Design</button>
         </span>
       </div>
     </div>
@@ -46,8 +46,9 @@
       </div>
       <div class="hdr-right">
         <span class="badge" id="statusBadge">playing</span>
-        <button id="helpGuide" title="Hướng dẫn nhanh">Hướng dẫn</button>
-        <span class="badge" id="buildStamp" title="thời điểm src/tool.js sửa lần cuối — dùng để biết browser đã nạp bản mới chưa">build …</span>
+        <button id="helpGuide" data-i18n-title="guideT" data-i18n="guide">Hướng dẫn</button>
+        <button id="langToggle" data-i18n="langLabel" data-i18n-title="langTitle"></button>
+        <span class="badge" id="buildStamp" data-i18n-title="buildT">build …</span>
       </div>
     </div>
   </div>
@@ -64,209 +65,209 @@
 
     <div id="side">
       <div id="tabs">
-        <button data-tab="curve" class="on">Độ khó</button>
-        <button data-tab="play">Play</button>
-        <button class="playtune-only" data-tab="journal">Nhật ký</button>
-        <button class="design-only" data-tab="tune">Tune</button>
-        <button class="design-only" data-tab="edit">Edit</button>
-        <button data-tab="playtest">Playtest</button>
-        <button class="design-only" data-tab="feel">Feel</button>
-        <button data-tab="set">Level Set</button>
+        <button data-tab="curve" class="on" data-i18n="tabCurve">Độ khó</button>
+        <button data-tab="play" data-i18n="tabPlay">Play</button>
+        <button class="playtune-only" data-tab="journal" data-i18n="tabJournal">Nhật ký</button>
+        <button class="design-only" data-tab="tune" data-i18n="tabTune">Tune</button>
+        <button class="design-only" data-tab="edit" data-i18n="tabEdit">Edit</button>
+        <button data-tab="playtest" data-i18n="tabPlaytest">Playtest</button>
+        <button class="design-only" data-tab="feel" data-i18n="tabFeel">Feel</button>
+        <button data-tab="set" data-i18n="tabSet">Level Set</button>
       </div>
       <div id="panels">
 
         <div class="panel" data-panel="play">
           <div class="row">
-            <button class="primary" id="analyzePlay">Đo level này</button>
-            <span class="hint" id="analyzePlayNote" style="margin:0">chạy solver + playtest nhanh để xem chỉ số</span>
+            <button class="primary" id="analyzePlay" data-i18n="measureThis">Đo level này</button>
+            <span class="hint" id="analyzePlayNote" style="margin:0" data-i18n="measureHint"></span>
           </div>
           <div class="flag" id="modeHint" style="margin-bottom:10px"></div>
-          <h3>Level hiện tại</h3>
+          <h3 data-i18n="curLevel">Level hiện tại</h3>
           <div class="metrics" id="playMetrics"></div>
-          <h3>Đọc số thế nào</h3>
-          <div class="hint">Bấm dấu <span class="help" data-help="do-sau"></span> cạnh bất kỳ con số nào để xem giải thích kèm ví dụ lấy từ chính 10 level này.</div>
-          <h3>Move log</h3>
+          <h3 data-i18n="howToRead">Đọc số thế nào</h3>
+          <div class="hint"><span data-i18n="howToReadA"></span> <span class="help" data-help="do-sau"></span> <span data-i18n="howToReadB"></span></div>
+          <h3 data-i18n="moveLog">Move log</h3>
           <div class="log" id="moveLog">—</div>
         </div>
 
         <div class="panel" data-panel="journal">
           <div id="setIntent" class="card"></div>
-          <h3>Bậc đã chốt cho từng level</h3>
+          <h3 data-i18n="lockedTiers">Bậc đã chốt cho từng level</h3>
           <div id="journalSet"></div>
-          <h3>Curve bậc</h3>
+          <h3 data-i18n="tierCurve">Curve bậc</h3>
           <div id="journalCurve"></div>
-          <h3>Nhật ký lượt chơi</h3>
+          <h3 data-i18n="runLog">Nhật ký lượt chơi</h3>
           <div class="row">
-            <button id="journalClear">Xoá nhật ký</button>
-            <button id="journalCopy">Copy JSON</button>
+            <button id="journalClear" data-i18n="clearLog">Xoá nhật ký</button>
+            <button id="journalCopy" data-i18n="copyJson">Copy JSON</button>
             <span class="hint" id="journalCount" style="margin:0"></span>
           </div>
           <div id="journalLog"></div>
         </div>
 
         <div class="panel" data-panel="tune">
-          <h3>Template độ khó <span class="help" data-help="template"></span></h3>
+          <h3><span data-i18n="tplTitle"></span> <span class="help" data-help="template"></span></h3>
           <div class="row">
             <span class="hint" id="tplNow" style="margin:0">—</span>
           </div>
           <div class="row">
-            <label style="min-width:0">Áp dụng cho</label>
+            <label style="min-width:0" data-i18n="applyTo"></label>
             <select id="tplScope">
-              <option value="one">chỉ level đang chọn</option>
-              <option value="all">toàn bộ level</option>
-              <option value="range">khoảng tuỳ chọn</option>
+              <option value="one" data-i18n="scopeOne"></option>
+              <option value="all" data-i18n="scopeAll"></option>
+              <option value="range" data-i18n="scopeRange"></option>
             </select>
             <span id="tplRange" style="display:none">
-              <label style="min-width:0">từ</label>
+              <label style="min-width:0" data-i18n="from"></label>
               <input type="number" id="tplFrom" value="1" min="1" style="width:56px">
-              <label style="min-width:0">đến</label>
+              <label style="min-width:0" data-i18n="to"></label>
               <input type="number" id="tplTo" value="10" min="1" style="width:56px">
             </span>
             <span class="grow" style="flex:1"></span>
-            <label style="min-width:0">seed</label>
+            <label style="min-width:0" data-i18n="seed"></label>
             <input type="number" id="tplSeed" value="1" style="width:56px">
             <span class="hint" id="tplProgress" style="margin:0"></span>
           </div>
           <div id="tplCards"></div>
           <details style="margin-top:8px">
-            <summary class="hint" style="cursor:pointer">Sửa template (JSON)</summary>
+            <summary class="hint" style="cursor:pointer" data-i18n="editTpl"></summary>
             <textarea id="tplJson" rows="14" spellcheck="false"></textarea>
-            <div class="row"><button id="tplLoad">Nạp JSON này</button><button id="tplReset">Về mặc định</button></div>
+            <div class="row"><button id="tplLoad" data-i18n="loadThisJson"></button><button id="tplReset" data-i18n="resetDefault"></button></div>
           </details>
 
-          <h3>Cân chỉnh độ khó <span class="help" data-help="do-kho"></span></h3>
+          <h3><span data-i18n="tuneTitle"></span> <span class="help" data-help="do-kho"></span></h3>
           <div class="metrics" id="tunerScore"></div>
           <div class="row" style="margin-top:9px">
-            <button class="primary" id="wantHarder">Muốn khó hơn</button>
-            <button class="primary" id="wantEasier">Muốn dễ hơn</button>
-            <label style="min-width:0">playout / phương án <span class="help" data-help="playout-runs"></span></label>
+            <button class="primary" id="wantHarder" data-i18n="wantHarder"></button>
+            <button class="primary" id="wantEasier" data-i18n="wantEasier"></button>
+            <label style="min-width:0"><span data-i18n="playoutsPer"></span> <span class="help" data-help="playout-runs"></span></label>
             <input type="number" id="suggestRuns" value="900" step="300" style="width:82px">
             <span id="suggestProgress" class="hint" style="margin:0"></span>
           </div>
           <div id="suggestions"></div>
 
-          <h3>Phân tích solver</h3>
+          <h3 data-i18n="solverTitle"></h3>
           <div class="row">
-            <button class="primary" id="analyze">Analyze level này</button>
-            <label style="min-width:0">node cap</label>
+            <button class="primary" id="analyze" data-i18n="analyzeThis"></button>
+            <label style="min-width:0" data-i18n="nodeCap"></label>
             <input type="number" id="nodeCap" value="300000" step="50000" style="width:96px">
-            <label style="min-width:0">playouts</label>
+            <label style="min-width:0" data-i18n="playoutsW"></label>
             <input type="number" id="runs" value="300" step="50" style="width:74px">
-            <label style="min-width:0">lỗi tay <span class="help" data-help="loi-tay"></span></label>
+            <label style="min-width:0"><span data-i18n="mistakeRate"></span> <span class="help" data-help="loi-tay"></span></label>
             <input type="number" id="eps" value="0.08" step="0.02" min="0" max="1" style="width:64px">
           </div>
           <div class="metrics" id="tuneMetrics"></div>
-          <h3>Đánh giá</h3>
+          <h3 data-i18n="verdict"></h3>
           <div class="flags" id="tuneFlags"></div>
-          <h3>Move budget</h3>
+          <h3 data-i18n="moveBudget"></h3>
           <div class="row">
-            <label>slack mục tiêu</label>
+            <label data-i18n="slackTarget"></label>
             <input type="number" id="slackTarget" value="1.6" step="0.1" min="1" style="width:74px">
-            <button id="applyBudget">Set budget = minMoves × slack</button>
+            <button id="applyBudget" data-i18n="setBudgetBtn"></button>
           </div>
-          <h3>Lời giải tối ưu</h3>
-          <div class="log" id="solutionLog">chưa analyze</div>
+          <h3 data-i18n="bestSolution"></h3>
+          <div class="log" id="solutionLog" data-i18n="notAnalyzed"></div>
         </div>
 
         <div class="panel" data-panel="edit">
           <div class="row">
-            <label>cols × rows</label>
+            <label data-i18n="colsRows"></label>
             <input type="number" id="edCols" min="2" max="9" style="width:60px">
             <input type="number" id="edRows" min="2" max="9" style="width:60px">
-            <label style="min-width:0">moves</label>
+            <label style="min-width:0" data-i18n="movesLabel"></label>
             <input type="number" id="edMoves" min="1" style="width:74px">
-            <label style="min-width:0">theme</label>
+            <label style="min-width:0" data-i18n="theme"></label>
             <select id="edTheme"><option value="city">city</option><option value="suburb">suburb</option></select>
           </div>
-          <h3>Brush</h3>
+          <h3 data-i18n="brush"></h3>
           <div class="swatches" id="brushes"></div>
           <div class="row" style="margin-top:7px">
-            <label style="min-width:0"><input type="checkbox" id="brushHidden"> tô kèm ẩn (?)</label>
-            <span class="hint" style="margin:0">Click ô = tô. Right-click ô = bật/tắt ẩn.</span>
+            <label style="min-width:0"><input type="checkbox" id="brushHidden"> <span data-i18n="paintHidden"></span></label>
+            <span class="hint" style="margin:0" data-i18n="paintHelp"></span>
           </div>
-          <h3>Grid <span class="hint" style="margin:0">(hàng trên = đỉnh cột, xe chèn vào đây)</span></h3>
+          <h3><span data-i18n="gridWord"></span> <span class="hint" style="margin:0" data-i18n="gridNote"></span></h3>
           <div id="editGrid"></div>
-          <div class="row"><label>xe trên pad</label><div id="padCell"></div></div>
-          <h3>Đếm xe</h3>
+          <div class="row"><label data-i18n="padCar"></label><div id="padCell"></div></div>
+          <h3 data-i18n="carCount"></h3>
           <div class="countList" id="counts"></div>
           <div class="flags" id="editFlags" style="margin-top:8px"></div>
-          <h3>Generate</h3>
+          <h3 data-i18n="generate"></h3>
           <div class="row">
-            <label>số màu</label><input type="number" id="genColors" value="4" min="1" max="9" style="width:60px">
-            <label style="min-width:0">strays</label><input type="number" id="genStrays" value="6" min="0" style="width:60px">
-            <label style="min-width:0">ẩn</label><input type="number" id="genHidden" value="0" min="0" style="width:60px">
-            <label style="min-width:0">seed</label><input type="number" id="genSeed" value="1" style="width:60px">
+            <label data-i18n="colorCount"></label><input type="number" id="genColors" value="4" min="1" max="9" style="width:60px">
+            <label style="min-width:0" data-i18n="straysWord"></label><input type="number" id="genStrays" value="6" min="0" style="width:60px">
+            <label style="min-width:0" data-i18n="hiddenWord"></label><input type="number" id="genHidden" value="0" min="0" style="width:60px">
+            <label style="min-width:0" data-i18n="seed"></label><input type="number" id="genSeed" value="1" style="width:60px">
           </div>
           <div class="row">
-            <label><input type="checkbox" id="genRevInGrid" checked> xe ngược chiều nằm trong grid</label>
-            <button id="genBtn">Generate vào level này</button>
+            <label><input type="checkbox" id="genRevInGrid" checked> <span data-i18n="revInGrid"></span></label>
+            <button id="genBtn" data-i18n="genIntoLevel"></button>
           </div>
-          <div class="hint">Sinh từ bàn đã giải rồi chỉ đổi chỗ 2 xe, nên luôn hợp lệ. <b>strays</b> = số lần đổi chỗ, là dial độ khó chính. Muốn có <b>choice</b> thật thì đặt số màu &lt; số cột — khi đó 2 cột cùng màu và player phải chọn.</div>
+          <div class="hint" data-i18n-html="genHelp"></div>
         </div>
 
         <div class="panel on" data-panel="curve">
           <div class="row">
             <span class="hint" style="margin:0" id="curveWho"></span>
             <span class="grow" style="flex:1"></span>
-            <button class="primary" id="curveMeasure">Đo cả bộ</button>
+            <button class="primary" id="curveMeasure" data-i18n="measureWholeSet">Đo cả bộ</button>
             <span class="hint" id="curveProgress" style="margin:0"></span>
           </div>
-          <h3>Bốn bộ cạnh nhau</h3>
+          <h3 data-i18n="fourSets">Bốn bộ cạnh nhau</h3>
           <div id="curveCompare"></div>
-          <h3>Bộ đang chọn</h3>
+          <h3 data-i18n="activeSet">Bộ đang chọn</h3>
           <div id="curveActive"></div>
-          <h3>Từng level</h3>
+          <h3 data-i18n="perLevel">Từng level</h3>
           <div id="curveLevels"></div>
         </div>
 
         <div class="panel" data-panel="playtest">
           <div class="row">
-            <button class="primary" id="runPlaytest">Chạy playtest</button>
-            <label style="min-width:0">số lần</label>
+            <button class="primary" id="runPlaytest" data-i18n="runPlaytest"></button>
+            <label style="min-width:0" data-i18n="runCount"></label>
             <input type="number" id="ptRuns" value="10000" step="1000" style="width:96px">
-            <label style="min-width:0"><input type="checkbox" id="ptBlind" checked> player không thấy xe ẩn</label>
+            <label style="min-width:0"><input type="checkbox" id="ptBlind" checked> <span data-i18n="blindPlayer"></span></label>
             <span id="ptProgress" class="hint" style="margin:0"></span>
           </div>
-          <div class="hint">Mỗi lần chơi được chạy với budget <b>không giới hạn</b> rồi ghi lại số move thực dùng. Một lượt chạy cho ra luôn cả đường cong budget → win rate, nên câu hỏi không còn là "50 move có ổn không" mà là "muốn win rate bao nhiêu thì đặt budget mấy".</div>
+          <div class="hint" data-i18n-html="playtestHelp"></div>
           <div id="ptSummary"></div>
-          <h3>Budget → win rate <span class="help" data-help="budget-curve"></span></h3>
+          <h3><span data-i18n="budgetToWin"></span> <span class="help" data-help="budget-curve"></span></h3>
           <div id="ptCurve"></div>
-          <h3>Số move thực dùng</h3>
+          <h3 data-i18n="movesActually"></h3>
           <div id="ptHist"></div>
-          <h3>Kết luận <span class="help" data-help="no-dead-end"></span></h3>
+          <h3><span data-i18n="conclusion"></span> <span class="help" data-help="no-dead-end"></span></h3>
           <div class="flags" id="ptFlags"></div>
         </div>
 
         <div class="panel" data-panel="feel">
           <div class="row">
-            <label>preset</label>
+            <label data-i18n="preset"></label>
             <select id="feelPreset"></select>
-            <button id="feelReset">Reset</button>
+            <button id="feelReset" data-i18n="resetWord"></button>
             <label style="min-width:0"><input type="checkbox" id="sfxOn" checked> SFX</label>
-            <label style="min-width:0"><input type="checkbox" id="useSprites"> dùng sprite xe (assets/shapes)</label>
+            <label style="min-width:0"><input type="checkbox" id="useSprites"> <span data-i18n="useSprites"></span></label>
           </div>
           <div id="feelSliders"></div>
-          <h3>Feel JSON</h3>
+          <h3 data-i18n="feelJson"></h3>
           <textarea id="feelJson" rows="9" spellcheck="false"></textarea>
-          <div class="row"><button id="feelLoad">Load JSON này</button><button id="feelCopy">Copy</button></div>
+          <div class="row"><button id="feelLoad" data-i18n="loadJson"></button><button id="feelCopy" data-i18n="copyWord"></button></div>
         </div>
 
         <div class="panel" data-panel="set">
           <div class="row">
-            <button class="primary" id="runAll">Analyze cả set</button>
-            <span class="design-only"><button id="addLevel">+ Level</button></span>
-            <span class="design-only"><button id="dupLevel">Duplicate</button></span>
-            <span class="design-only"><button id="delLevel">Delete</button></span>
+            <button class="primary" id="runAll" data-i18n="analyzeAll"></button>
+            <span class="design-only"><button id="addLevel" data-i18n="addLevel"></button></span>
+            <span class="design-only"><button id="dupLevel" data-i18n="duplicate"></button></span>
+            <span class="design-only"><button id="delLevel" data-i18n="del"></button></span>
           </div>
           <div id="setTableWrap"><table class="grid" id="setTable"></table></div>
-          <h3>Curve</h3>
+          <h3 data-i18n="curveWord"></h3>
           <div id="curve"></div>
           <div class="design-only">
-            <h3>Export</h3>
+            <h3 data-i18n="exportWord"></h3>
             <div class="row">
-              <button class="primary" id="exportBtn">Xuất JSON set</button>
-              <button id="downloadBtn">Download .json</button>
-              <button id="importBtn">Import từ textarea</button>
+              <button class="primary" id="exportBtn" data-i18n="exportJson"></button>
+              <button id="downloadBtn" data-i18n="downloadJson"></button>
+              <button id="importBtn" data-i18n="importJson"></button>
             </div>
             <textarea id="exportJson" rows="14" spellcheck="false"></textarea>
           </div>
@@ -284,7 +285,7 @@
    the load order, which plain dynamic injection would not. */
 (function () {
   var t = Date.now();
-  [ 'help', 'modal', 'sprites', 'engine', 'levels', 'sets', 'solver', 'gen', 'playtest',
+  [ 'i18n', 'help', 'modal', 'sprites', 'engine', 'levels', 'sets', 'solver', 'gen', 'playtest',
     'tuner', 'difficulty', 'feel', 'render', 'tool'
   ].forEach(function (m) {
     document.write('<script src="src/' + m + '.js?t=' + t + '"><\/script>');

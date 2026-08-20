@@ -29,8 +29,8 @@
 
   var SETS = {
     'default': {
-      name: 'Gốc',
-      label: 'Mặc định',
+      name: { vi: 'Gốc', en: 'Original' },
+      label: { vi: 'Mặc định', en: 'Default' },
       intent: 'Dựng từ ảnh chụp game tham chiếu. Budget rộng 2.5–8.6x — gần như không thể thua.',
       note: '',
       rhythmOn: 'winAvg',
@@ -38,10 +38,10 @@
       levels: null
     },
     'easy': {
-      name: 'Dẫn tay',
-      label: 'Dễ',
-      intent:
-        'Không ai được thua. Mỗi cơ chế mới xong thì hạ bậc cho player làm lại dễ.',
+      name: { vi: 'Dẫn tay', en: 'Hand-holding' },
+      label: { vi: 'Dễ', en: 'Easy' },
+      intent: { vi: 'Không ai được thua. Mỗi cơ chế mới xong thì hạ bậc cho player làm lại dễ.',
+                en: 'Nobody loses. After each new mechanic the next level drops so the player redoes it easily.' },
       note: '',
       rhythmOn: 'winSloppy',
       breathers: [6, 10],
@@ -69,10 +69,10 @@
       ]
     },
     'medium': {
-      name: 'Nhịp',
-      label: 'Trung',
-      intent:
-        'Độ khó có nhịp. Leo 2–3 level rồi thả 1. Level 10 không phải đỉnh.',
+      name: { vi: 'Nhịp', en: 'Rhythm' },
+      label: { vi: 'Trung', en: 'Medium' },
+      intent: { vi: 'Độ khó có nhịp. Leo 2–3 level rồi thả 1. Level 10 không phải đỉnh.',
+                en: 'Difficulty has rhythm. Climb two or three levels, then release one. Level 10 is not the peak.' },
       note: '',
       rhythmOn: 'winAvg',
       breathers: [4, 8, 10],
@@ -100,10 +100,10 @@
       ]
     },
     'hard': {
-      name: 'Thử ngay',
-      label: 'Khó',
-      intent:
-        'Lọc player đã quen thể loại. Đỉnh sớm ở level 3, kết đúng ở đỉnh.',
+      name: { vi: 'Thử ngay', en: 'Straight In' },
+      label: { vi: 'Khó', en: 'Hard' },
+      intent: { vi: 'Lọc player đã quen thể loại. Đỉnh sớm ở level 3, kết đúng ở đỉnh.',
+                en: 'Filters for players who know the genre. An early peak at level 3, and it ends on its peak.' },
       note: '',
       rhythmOn: 'winAvg',
       breathers: [4, 7, 9],
