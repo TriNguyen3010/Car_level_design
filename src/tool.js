@@ -919,16 +919,18 @@
 
   function winBars(parent, tpl) {
     var box = el('div', 'bars', parent);
+    box.title = 'tỉ lệ thắng ước lượng của ba hạng player';
     var med = tpl.medians || {};
     [['giỏi', med.winCareful, '#4ec97a'],
-     ['trung bình', med.winAvg, '#4a90d9'],
+     ['TB', med.winAvg, '#4a90d9'],
      ['ẩu', med.winSloppy, '#e05c4c']].forEach(function (row) {
-      el('span', 'who', box, row[0]);
-      var track = el('span', 'track', box);
+      var grp = el('span', 'grp', box);
+      el('span', 'who', grp, row[0]);
+      var track = el('span', 'track', grp);
       var fill = el('i', null, track);
       fill.style.width = Math.round((row[1] || 0) * 100) + '%';
       fill.style.background = row[2];
-      el('span', 'pct', box, Math.round((row[1] || 0) * 100) + '%');
+      el('span', 'pct', grp, Math.round((row[1] || 0) * 100) + '%');
     });
   }
 
@@ -968,30 +970,43 @@
       var top = el('div', 'tpl-top', card);
       tierThumb(top, key);
       var mid2 = el('div', 'tpl-mid', top);
-      el('div', 'tpl-feel', mid2, '“' + tpl.feel + '”');
-      var facts = el('div', 'tpl-facts', mid2);
+      winBars(mid2, tpl);
+
       var strays = 0, hid = 0;
       sp.grid.forEach(function (col) {
         col.forEach(function (x) { if (x.stray) strays++; if (x.hidden) hid++; });
       });
-      facts.innerHTML =
-        'Bàn mẫu ' + sp.cols + '×' + sp.rows + ': <b>' + strays + '</b> xe lạ' +
+      var det = el('details', 'tpl-why', mid2);
+      el('summary', null, det, '▸ ' + tpl.feel);
+      var body = el('div', 'body', det);
+      body.innerHTML =
+        '<div class="tpl-facts">Bàn mẫu ' + sp.cols + '×' + sp.rows + ': <b>' + strays + '</b> xe lạ' +
         (hid ? ', <b>' + hid + '</b> xe ẩn' : ', không xe ẩn') +
         (sp.solve ? '. Lời giải <b>' + sp.solve + '</b> move, cho <b>' + sp.budget + '</b>' : '') +
-        '.<br>Dùng cho: ' + tpl.when + ' · bàn tối thiểu ' + tpl.minCols + '×' + tpl.minRows;
-      winBars(mid2, tpl);
-
-      var det = el('details', 'tpl-why', card);
-      el('summary', null, det, '▸ Vì sao bậc này khó theo kiểu đó');
-      el('div', 'body', det).innerHTML = tpl.focus + '<br><br>' + tpl.why;
+        '. Dùng cho: ' + tpl.when + ' · bàn tối thiểu ' + tpl.minCols + '×' + tpl.minRows + '</div>' +
+        '<div style="margin-top:6px">' + tpl.focus + '<br><br>' + tpl.why + '</div>';
 
       var warn = DF.sizeWarning(L, key);
       if (warn) el('div', 'flag warn', card, warn).style.marginTop = '8px';
 
+      /* Seven rows per card times ten cards is seventy lines of mostly ticks.
+       * Only the criteria that MISS are worth screen space; the badge already
+       * carries the score, and the full list is one click away. */
       if (chk) {
         var cbox = el('div', 'tpl-check', card);
-        chk.rows.forEach(function (r) {
+        var missed = chk.rows.filter(function (r) { return !r.ok; });
+        missed.forEach(function (r) {
           var row = el('div', 'crit', cbox);
+          el('span', 'm', row, '✗');
+          el('span', 'lbl', row, r.label);
+          el('span', null, row, r.value);
+          el('span', 'band', row, 'cần ' + r.band);
+        });
+        var all = el('details', 'tpl-why', cbox);
+        el('summary', null, all, missed.length ? '▸ cả ' + chk.total + ' tiêu chí' : '▸ ' + chk.total + '/' + chk.total + ' — xem chi tiết');
+        var ab = el('div', 'body', all);
+        chk.rows.forEach(function (r) {
+          var row = el('div', 'crit', ab);
           el('span', r.ok ? 'y' : 'm', row, r.ok ? '✓' : '✗');
           el('span', 'lbl', row, r.label);
           el('span', null, row, r.value);

@@ -87,9 +87,13 @@ Kiểm chứng: áp Độ 2 cho cả 10 level → **10/10 đạt 7/7 trong 1.7 g
 
 Việc này chạy trong Web Worker. Trước đó nó chunk bằng `setTimeout` trên luồng chính, và tab nền bóp mỗi `setTimeout` xuống ~1 giây — 10 level cần hàng trăm lần yield nên mất **nhiều phút** thay vì 1.7 giây.
 
-Mỗi thẻ mở đầu bằng **ảnh thu nhỏ của một bàn mẫu thật** ở bậc đó — xe viền trắng là xe lạ, ô tối viền tím là xe ẩn, chú thích dưới ảnh là *bao nhiêu màu trên bao nhiêu cột*. Nhìn ảnh là thấy ngay bậc 1 có 5 màu cho 5 cột còn bậc 7 chỉ 3 màu, tức có cột trùng màu.
+Thẻ giữ ba thứ luôn hiện, còn lại gập:
 
-Dưới ảnh là **một câu cảm giác chơi** thay cho câu cơ chế — *"Bấm sai 2–3 lần là thua. Đây là chỗ Undo bắt đầu đáng tiền."* — rồi số cụ thể của bàn mẫu (*lời giải 17 move, cho 22*) và **ba thanh win rate** cho player giỏi / trung bình / ẩu. Phần giải thích cơ chế nằm trong mục **▸ Vì sao** gập lại.
+- **Ảnh thu nhỏ của một bàn mẫu thật** ở bậc đó — xe viền trắng là xe lạ, ô tối viền tím là xe ẩn, chú thích dưới ảnh là *bao nhiêu màu trên bao nhiêu cột*. Nhìn ảnh là thấy ngay bậc 1 có 5 màu cho 5 cột còn bậc 7 chỉ 3 màu, tức có cột trùng màu.
+- **Ba thanh win rate** trên một dòng: `giỏi ▬100% · TB ▬88% · ẩu ▬39%`.
+- **Chỉ những tiêu chí đang lệch.** Badge đã ghi `6/7` nên hàng loạt dấu tích không cần chỗ; cả 7 tiêu chí nằm sau một cú bấm.
+
+Gập lại: **câu cảm giác chơi** làm tiêu đề mục mở rộng — *"▸ Bấm sai 2–3 lần là thua. Đây là chỗ Undo bắt đầu đáng tiền."* — mở ra có số của bàn mẫu (*lời giải 17 move, cho 22*) và phần giải thích cơ chế.
 
 Mỗi thẻ có:
 - **Áp dụng** — sinh cho tới khi **đạt tiêu chí**, không chặn lại. Bàn nhỏ hơn mức tối thiểu thì tự mở rộng; vẫn lệch thì mở rộng tìm kiếm; vẫn lệch thì thêm 1 hàng. Kiểm chứng: 20/20 trường hợp bắt đầu từ 3×3 đến 6×6 đều đạt 7/7.
