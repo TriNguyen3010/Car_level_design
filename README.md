@@ -285,6 +285,15 @@ Hệ quả: **nguồn thua duy nhất là move budget.** Không có "chơi hỏn
 
 Những ván "không về đích dù budget vô hạn" trong report là player bản năng **lặp vòng**, không phải thế cờ chết — hai thứ khác nhau và tool ghi rõ.
 
+## Thanh header
+
+Hai cột, hai hàng. Cột trái trả lời *"tôi đang ở đâu"*, cột phải là *"tôi làm được gì / nó đang thế nào"*.
+
+| | trái | phải |
+|---|---|---|
+| hàng 1 | bộ cấp độ · chế độ | trạng thái · Hướng dẫn · build |
+| hàng 2 | ◀ Level ▶ · Moves · kích thước | Restart · Undo · Hint · Autoplay · Ẩn puzzle |
+
 ## Phím tắt
 
 `1`-`9` tap cột · `r` restart · `u`/`z` undo · `h` hint · `b` ẩn/hiện puzzle · `←`/`→` đổi level

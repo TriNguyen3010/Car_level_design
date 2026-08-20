@@ -36,9 +36,12 @@ textarea { width: 100%; font-family: ui-monospace, SFMono-Regular, Menlo, monosp
 /* ---------- shell ---------- */
 #app { display: flex; flex-direction: column; height: 100%; }
 #top {
-  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  display: flex; flex-direction: column; gap: 7px;
   padding: 8px 12px; background: var(--panel); border-bottom: 1px solid var(--line);
 }
+.hdr-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.hdr-left, .hdr-right { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+.hdr-right { margin-left: auto; }
 #top .sep { width: 1px; height: 20px; background: var(--line); }
 #top .grow { flex: 1; }
 .badge {
