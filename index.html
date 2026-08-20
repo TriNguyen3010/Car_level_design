@@ -69,11 +69,22 @@
           <h3>Template độ khó <span class="help" data-help="template"></span></h3>
           <div class="row">
             <span class="hint" id="tplNow" style="margin:0">—</span>
+          </div>
+          <div class="row">
+            <label style="min-width:0">Áp dụng cho</label>
+            <select id="tplScope">
+              <option value="one">chỉ level đang chọn</option>
+              <option value="range">nhiều level</option>
+            </select>
+            <span id="tplRange" style="display:none">
+              <label style="min-width:0">từ</label>
+              <input type="number" id="tplFrom" value="1" min="1" style="width:56px">
+              <label style="min-width:0">đến</label>
+              <input type="number" id="tplTo" value="10" min="1" style="width:56px">
+            </span>
             <span class="grow" style="flex:1"></span>
             <label style="min-width:0">seed</label>
-            <input type="number" id="tplSeed" value="1" style="width:60px">
-            <label style="min-width:0">số bàn thử</label>
-            <input type="number" id="tplTries" value="8" min="1" max="24" style="width:64px">
+            <input type="number" id="tplSeed" value="1" style="width:56px">
             <span class="hint" id="tplProgress" style="margin:0"></span>
           </div>
           <div id="tplCards"></div>

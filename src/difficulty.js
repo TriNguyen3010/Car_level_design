@@ -22,7 +22,8 @@
 
   var TEMPLATES = {
     'tap-lai': {
-      name: 'Tập lái',
+      tier: 1,
+      name: 'Độ 1 · Tập lái',
       axis: 'Không trục nào — dạy luật',
       focus:
         'Mỗi màu đúng một cột nên xe văng ra tự chỉ đường cho nước sau; mỗi cột ' +
@@ -34,13 +35,14 @@
       minCols: 3, minRows: 3,
       build: { colorRatio: 1.0, strayDensity: 0.14, hiddenRatio: 0, slack: 3.0 },
       target: {
-        winCareful: [0.97, 1.0], winAvg: [0.95, 1.0], winSloppy: [0.75, 1.0],
-        depth: [0, 14], dumpRatio: [0, 0.20], slack: [2.6, 3.4], hiddenRatio: [0, 0]
+        winCareful: [0.97, 1.0], winAvg: [0.95, 1.0], winSloppy: [0.72, 1.0],
+        depth: [0, 14], dumpRatio: [0, 0.22], slack: [2.6, 3.4], hiddenRatio: [0, 0]
       }
     },
 
     'gio-cao-diem': {
-      name: 'Giờ cao điểm',
+      tier: 2,
+      name: 'Độ 2 · Giờ cao điểm',
       axis: 'Sức ép budget',
       focus:
         'Giữ nguyên cấu trúc dễ đọc của Tập lái — mỗi màu một cột, xe lạ thưa — ' +
@@ -55,52 +57,54 @@
       minCols: 4, minRows: 5,
       build: { colorRatio: 1.0, strayDensity: 0.26, hiddenRatio: 0, slack: 1.65 },
       target: {
-        winCareful: [0.92, 1.0], winAvg: [0.72, 0.95], winSloppy: [0.20, 0.62],
-        depth: [0, 20], dumpRatio: [0, 0.24], slack: [1.50, 1.85], hiddenRatio: [0, 0]
+        winCareful: [0.90, 1.0], winAvg: [0.80, 0.95], winSloppy: [0.28, 0.72],
+        depth: [0, 20], dumpRatio: [0, 0.26], slack: [1.50, 1.85], hiddenRatio: [0, 0]
       }
     },
 
     'bai-chat': {
-      name: 'Bãi chật',
+      tier: 3,
+      name: 'Độ 3 · Bãi chật',
       axis: 'Độ sâu định tuyến',
       focus:
         'Số màu <b>ít hơn</b> số cột nên có cột trùng màu và player phải chọn nhả ' +
         'xe vào đâu. Mật độ xe lạ cao để nhiều cột có ≥2 xe lạ — auto-sort im lặng, ' +
         'player tự tính thứ tự moi ra.',
       why:
-        '<b>Tier này KHÔNG khó hơn Giờ cao điểm — nó khó theo kiểu khác.</b> Đo ' +
-        'trên 12 bàn: win của player trung bình 68–92%, gần y hệt Giờ cao điểm, ' +
-        'nhưng độ sâu 22+ thay vì dưới 20. Lý do: ít màu hơn số cột cho player ' +
-        '<b>nhiều chỗ nhả xe đúng hơn</b> nên bớt move phí, triệt tiêu phần nào ' +
-        'sức ép budget. Đừng vừa gộp màu vừa siết budget và mong cộng dồn — nó trừ ' +
-        'nhau. Dùng tier này khi level bị chê nhạt, không phải khi cần siết.',
-      when: 'Level 26–60, xen kẽ với Giờ cao điểm để đổi vị. Level 6 hiện tại là mẫu gần nhất.',
+        'Ít màu hơn số cột cho player <b>nhiều chỗ nhả xe đúng hơn</b>, nên nó tự ' +
+        'động bớt move phí và triệt tiêu một phần sức ép budget. Ở slack 1.60 đo ' +
+        'được win trung bình 83–98% — ngang hệt Độ 2, tức là sâu hơn mà không khó ' +
+        'hơn. Nên slack ở đây phải siết về <b>1.42</b> mới bù lại được và giữ thang ' +
+        '1→4 đúng thứ tự. Bài học: gộp màu và siết budget <b>trừ nhau</b>, không cộng.',
+      when: 'Level 26–60. Level 6 hiện tại là mẫu gần nhất.',
       minCols: 5, minRows: 5,
-      build: { colorRatio: 0.60, strayDensity: 0.34, hiddenRatio: 0, slack: 1.60 },
+      build: { colorRatio: 0.60, strayDensity: 0.34, hiddenRatio: 0, slack: 1.42 },
       target: {
-        winCareful: [0.90, 1.0], winAvg: [0.68, 0.92], winSloppy: [0.28, 0.68],
-        depth: [22, 100], dumpRatio: [0.02, 0.28], slack: [1.45, 1.78], hiddenRatio: [0, 0]
+        winCareful: [0.80, 1.0], winAvg: [0.62, 0.80], winSloppy: [0.18, 0.60],
+        depth: [22, 100], dumpRatio: [0, 0.28], slack: [1.30, 1.55], hiddenRatio: [0, 0]
       }
     },
 
     'gio-dem': {
-      name: 'Giờ đêm',
+      tier: 4,
+      name: 'Độ 4 · Giờ đêm',
       axis: 'Thiếu thông tin, cộng dồn cả ba trục',
       focus:
         'Ẩn ~24% bàn, số màu ít hơn số cột, mật độ xe lạ cao nhất, budget siết về ' +
         '1.45x. Tier khó nhất và là tier duy nhất player ẩu gần như không qua.',
       why:
         'Xe ẩn lộ ngay khi cột bị tap nên một mình nó chỉ chặn được lượt lập kế ' +
-        'hoạch đầu của mỗi cột — đo được chỉ +9 điểm khó. Nó chỉ thành trục thật khi ' +
-        '<b>ghép với budget chặt</b>: lúc đó nước tap để dò màu cũng là nước tiêu ' +
-        'budget, player phải trả giá cho việc không biết. Đừng quá 30% bàn — quá ' +
-        'ngưỡng đó thành đoán, không phải chơi.',
+        'hoạch đầu của mỗi cột — đo được chỉ +9 điểm khó. Ở slack 1.45 tier này còn ' +
+        'ra win trung bình 70–98%, tức <b>không khó hơn Độ 3</b>. Xe ẩn chỉ thành ' +
+        'trục thật khi ghép với budget rất chặt: nước tap để dò màu cũng là nước ' +
+        'tiêu budget. Nên slack phải về <b>1.28</b>. Đừng đẩy xe ẩn quá 30% bàn — ' +
+        'quá ngưỡng đó thành đoán, không phải chơi.',
       when: 'Level 60+, hoặc daily challenge. Nên gate bằng booster.',
       minCols: 5, minRows: 6,
-      build: { colorRatio: 0.60, strayDensity: 0.42, hiddenRatio: 0.24, slack: 1.45 },
+      build: { colorRatio: 0.60, strayDensity: 0.42, hiddenRatio: 0.24, slack: 1.28 },
       target: {
-        winCareful: [0.80, 1.0], winAvg: [0.45, 0.80], winSloppy: [0, 0.42],
-        depth: [16, 100], dumpRatio: [0.02, 0.30], slack: [1.32, 1.60], hiddenRatio: [0.18, 0.30]
+        winCareful: [0.55, 0.98], winAvg: [0.35, 0.62], winSloppy: [0, 0.35],
+        depth: [16, 100], dumpRatio: [0, 0.32], slack: [1.16, 1.40], hiddenRatio: [0.18, 0.30]
       }
     }
   };

@@ -46,27 +46,38 @@ Auto-sort nằm trong `engine.js`, **không** nằm ở UI — nếu để ở U
 
 ## Template độ khó (tab Tune)
 
-Bốn tier, mỗi tier **tì vào một trục khác nhau**. Bốn tier cùng khó theo một kiểu thì chỉ là một level lặp lại bốn lần.
+Bốn bậc, **Độ 1 dễ nhất đến Độ 4 khó nhất**. Mỗi bậc tì vào **một trục khác nhau** — bốn bậc cùng khó theo một kiểu thì chỉ là một level lặp bốn lần.
 
-| Tier | Trục | Knob | win TB | Độ sâu | Bàn tối thiểu |
-|---|---|---|---|---|---|
-| **Tập lái** | không — dạy luật | màu=cột · lạ 14% · slack 3.0x | 95–100% | ≤14 | 3×3 |
-| **Giờ cao điểm** | sức ép budget | màu=cột · lạ 26% · slack 1.65x | 72–95% | ≤20 | 4×5 |
-| **Bãi chật** | độ sâu định tuyến | màu 0.6×cột · lạ 34% · slack 1.60x | 68–92% | ≥22 | 5×5 |
-| **Giờ đêm** | thiếu thông tin, cộng dồn | màu 0.6×cột · lạ 42% · **ẩn 24%** · slack 1.45x | 45–80% | ≥16 | 5×6 |
+| Bậc | Trục | Knob | win TB | win ẩu | Độ sâu | Bàn tối thiểu |
+|---|---|---|---|---|---|---|
+| **Độ 1 · Tập lái** | dạy luật | màu=cột · lạ 14% · slack 3.00x | 95–100% | 72–100% | ≤14 | 3×3 |
+| **Độ 2 · Giờ cao điểm** | sức ép budget | màu=cột · lạ 26% · slack 1.65x | 80–95% | 28–72% | ≤20 | 4×5 |
+| **Độ 3 · Bãi chật** | độ sâu định tuyến | màu 0.6×cột · lạ 34% · slack 1.42x | 62–80% | 18–60% | ≥22 | 5×5 |
+| **Độ 4 · Giờ đêm** | thiếu thông tin | màu 0.6×cột · lạ 42% · **ẩn 24%** · slack 1.28x | 35–62% | 0–35% | ≥16 | 5×6 |
 
-**Bãi chật không khó hơn Giờ cao điểm** — đo trên 14 bàn từ 4×5 đến 6×6, win của player trung bình gần y hệt, chỉ độ sâu là khác. Nguyên nhân: ít màu hơn số cột cho player nhiều chỗ nhả xe đúng hơn nên bớt move phí, triệt tiêu phần nào sức ép budget. Thang độ khó thật là **Tập lái → Giờ cao điểm ≈ Bãi chật → Giờ đêm**; thang độ sâu là **Tập lái → Giờ cao điểm → Bãi chật ≈ Giờ đêm**. Xen kẽ hai tier giữa để đổi vị, đừng coi là hai bậc.
+Dải win **không chồng nhau**, nên số 1→4 là thứ tự độ khó thật. Nhưng để được vậy phải siết slack ở hai bậc trên:
+
+- Độ 3 ở slack 1.60 đo ra win TB **83–98%** — ngang hệt Độ 2, tức sâu hơn mà **không** khó hơn. Phải về 1.42.
+- Độ 4 ở slack 1.45 đo ra **70–98%** — không khó hơn Độ 3. Phải về 1.28.
+
+Bài học: **gộp màu và siết budget trừ nhau, không cộng.** Ít màu hơn số cột cho player nhiều chỗ nhả xe đúng hơn nên tự động bớt move phí. Đừng chồng hai thứ mà mong cộng dồn.
+
+### Phạm vi áp dụng
+
+Ô **Áp dụng cho** chọn:
+- **chỉ level đang chọn** (mặc định) — chỉ ghi vào level đang mở
+- **nhiều level** — nhập khoảng từ/đến, mỗi level được sinh và playtest riêng, **giữ nguyên kích thước bàn của nó** (chỉ mở rộng nếu nhỏ hơn mức tối thiểu của bậc)
+
+Cả khoảng là **một** lần Hoàn tác. Kiểm chứng: áp Độ 2 cho level 1–3 → 3/3 đạt 7/7, L1 tự mở 4×4 lên 4×5, một lần Hoàn tác trả lại cả ba.
 
 Mỗi thẻ có:
-- **Áp dụng** — sinh cho tới khi **đạt tiêu chí**, không chặn lại. Bàn nhỏ hơn mức tối thiểu của tier thì tự mở rộng lên; vẫn lệch thì mở rộng tìm kiếm; vẫn lệch thì thêm 1 hàng. Dừng ở bàn đầu tiên đạt đủ. Kiểm chứng: 20/20 trường hợp bắt đầu từ 3×3 đến 6×6 đều đạt 7/7 sau leo thang. Kết quả hiện trong modal kèm bảng tiêu chí và nhật ký từng bước, có nút Sinh lại (seed khác) và Bỏ.
+- **Áp dụng** — sinh cho tới khi **đạt tiêu chí**, không chặn lại. Bàn nhỏ hơn mức tối thiểu thì tự mở rộng; vẫn lệch thì mở rộng tìm kiếm; vẫn lệch thì thêm 1 hàng. Kiểm chứng: 20/20 trường hợp bắt đầu từ 3×3 đến 6×6 đều đạt 7/7.
 - **Chỉ đặt lại budget** — giữ nguyên lưới a đã vẽ, chỉ dò budget.
 - **x/7 tiêu chí** — level hiện tại đạt bao nhiêu dải, kèm giá trị thật vs dải cần.
 
-Dòng đầu cho biết level đang giống tier nào. Toàn bộ template nằm trong `src/difficulty.js` và sửa được ngay trong UI qua ô **Sửa template (JSON)**.
+Dòng đầu cho biết level đang giống bậc nào. Toàn bộ template nằm trong `src/difficulty.js` và sửa được ngay trong UI qua ô **Sửa template (JSON)**.
 
-Dải mục tiêu **đo ra chứ không đoán**: sinh 12 bàn cho mỗi spec trên 4 kích thước rồi lấy dải thực tế. Kiểm chứng lại: 14/14 trường hợp hợp lệ đạt 7/7.
-
-Bàn quá nhỏ so với tier thì tool cảnh báo — bàn ngắn thì lời giải ngắn, không đủ số nước để player kịp thua, siết knob nào cũng không tới dải.
+Bàn quá nhỏ so với bậc thì tool tự mở rộng và nói rõ lý do — bàn ngắn thì lời giải ngắn, không đủ số nước để player kịp thua.
 
 ## Cân chỉnh ở mức cao (tab Tune)
 

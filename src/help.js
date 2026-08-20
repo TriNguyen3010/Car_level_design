@@ -163,20 +163,21 @@
 
     'template': {
       title: 'Template độ khó',
-      body: 'Mỗi tier là một <b>mục tiêu viết bằng đúng các knob đang có</b> — số màu trên số cột, mật độ xe lạ, tỉ lệ xe ẩn, slack — cộng với dải số mà level phải rơi vào mới được tính là tier đó. Nên template nào cũng đọc được, phản biện được, sửa được (mở phần "Sửa template (JSON)").',
-      list: [
-        '<b>Áp dụng</b> — sinh thử nhiều bàn theo knob của tier, giữ bàn rơi gần dải mục tiêu nhất. Mỗi bàn đều được playtest thật.',
-        '<b>Chỉ đặt lại budget</b> — giữ nguyên lưới a đã vẽ, chỉ dò budget trong dải slack của tier cho tới khi win rate vào dải.',
-        '<b>x/7 tiêu chí</b> — level hiện tại đạt bao nhiêu dải của tier đó.'
-      ],
+      body: 'Bốn bậc, <b>Độ 1 dễ nhất đến Độ 4 khó nhất</b>. Mỗi bậc là một mục tiêu viết bằng đúng các knob đang có — số màu trên số cột, mật độ xe lạ, tỉ lệ xe ẩn, slack — cộng dải số mà level phải rơi vào mới được tính là bậc đó. Nên bậc nào cũng đọc được, phản biện được, sửa được (mở "Sửa template (JSON)").',
       example:
-        'Mỗi tier tì vào MỘT trục. Bốn tier cùng "khó" theo một kiểu\n' +
+        'Mỗi bậc tì vào MỘT trục khác nhau. Bốn bậc cùng khó theo một kiểu\n' +
         'thì chỉ là một level lặp lại bốn lần.\n\n' +
-        '  Tập lái       không trục nào  — dạy luật\n' +
-        '  Giờ cao điểm  budget          — thua vì tiêu move phí\n' +
-        '  Bãi chật      định tuyến      — thua vì chọn cột sai\n' +
-        '  Giờ đêm       thiếu thông tin — cộng dồn cả ba',
-      note: 'Đo trên 14 bàn từ 4×5 đến 6×6: <b>Bãi chật không khó hơn Giờ cao điểm</b> — win của player trung bình gần y hệt, chỉ độ sâu là khác. Thang độ khó thật là Tập lái → Giờ cao điểm ≈ Bãi chật → Giờ đêm; thang độ sâu là Tập lái → Giờ cao điểm → Bãi chật ≈ Giờ đêm. Xen kẽ hai tier giữa để đổi vị, đừng coi là hai bậc.'
+        '  Độ 1  Tập lái        dạy luật        win TB  95-100%\n' +
+        '  Độ 2  Giờ cao điểm   budget          win TB   80-95%\n' +
+        '  Độ 3  Bãi chật       định tuyến      win TB   62-80%   độ sâu 22+\n' +
+        '  Độ 4  Giờ đêm        thiếu thông tin win TB   35-62%   ẩn 18-30%\n\n' +
+        'Dải win không chồng nhau, nên số 1-4 là thứ tự độ khó thật.',
+      list: [
+        '<b>Áp dụng cho</b> — chọn "chỉ level đang chọn" hoặc "nhiều level" rồi nhập khoảng. Cả khoảng là <b>một</b> lần Hoàn tác.',
+        '<b>Áp dụng</b> — sinh cho tới khi đạt tiêu chí: bàn nhỏ hơn mức tối thiểu thì tự mở rộng, vẫn lệch thì tìm rộng hơn, vẫn lệch thì thêm 1 hàng.',
+        '<b>Chỉ đặt lại budget</b> — giữ nguyên lưới đã vẽ, chỉ dò budget trong dải slack của bậc.'
+      ],
+      note: 'Để thang đúng thứ tự phải siết slack ở hai bậc trên. Đo được: Độ 3 ở slack 1.60 ra win TB 83–98% — <b>ngang hệt Độ 2</b>, tức sâu hơn mà không khó hơn, nên slack phải về 1.42. Độ 4 ở slack 1.45 ra 70–98%, không khó hơn Độ 3, nên phải về 1.28. Bài học: <b>gộp màu và siết budget trừ nhau, không cộng</b> — ít màu hơn số cột cho player nhiều chỗ nhả xe đúng hơn nên tự động bớt move phí.'
     },
 
     'no-dead-end': {
