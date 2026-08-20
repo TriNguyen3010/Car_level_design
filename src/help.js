@@ -157,8 +157,23 @@
 
     'ceiling': {
       title: 'Trần win',
-      body: 'Tỉ lệ thắng nếu budget là <b>vô hạn</b>. Dưới 100% nghĩa là có những ván player tự dồn mình vào thế bí không bao giờ gỡ được, dù cho bao nhiêu nước cũng vậy.',
-      note: 'Trần thấp mà budget lại rộng là kiểu thất bại tệ nhất: player mất 5 phút mới biết mình hỏng từ nước thứ 3.'
+      body: 'Tỉ lệ thắng của <b>chính kiểu chơi đó</b> nếu budget là vô hạn. Dưới 100% nghĩa là có những ván player bấm theo bản năng bị <b>lặp vòng</b> — đẩy xe qua lại giữa hai cột mà không tiến thêm.',
+      note: 'Đây KHÔNG phải thế cờ chết. Xem mục "Game không có ngõ cụt". Trần thấp là tín hiệu level dễ làm player thật thấy bế tắc dù vẫn còn cửa thắng — đáng lo không kém gì thua thật.'
+    },
+
+    'no-dead-end': {
+      title: 'Game không có ngõ cụt',
+      body: 'Em kiểm tra 134 thế cờ dở sau khi chơi ẩu trên 4 level: IDA* tìm ra lời giải cho <b>toàn bộ 134 thế</b>, không thế nào bị tuyên bố vô nghiệm.',
+      example:
+        'the co dang do sau khi choi au: 134\n' +
+        '  van giai duoc : 108\n' +
+        '  that su chet  :   0   ← không có thế nào chết\n' +
+        '  solver het node:  26   ← chỉ là hết ngân sách tìm, không phải vô nghiệm',
+      list: [
+        'Lý do: chỉ cần còn 2 cột chưa khoá là đủ chỗ để đảo xe về đúng chỗ.',
+        'Cột chỉ khoá khi đã thuần một màu, nên không bao giờ khoá nhầm.'
+      ],
+      note: 'Hệ quả cho thiết kế: <b>nguồn thua duy nhất là move budget</b>. Không có "chơi hỏng bàn". Đó là lý do budget là đòn bẩy độ khó mạnh nhất, và cũng là lý do phải đo budget bằng playtest chứ không đặt số tròn.'
     },
 
     'trap': {

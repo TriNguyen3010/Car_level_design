@@ -33,12 +33,12 @@
   /* ---------------- board ---------------- */
 
   var stage = $('stage');
-  var overlays = Array.prototype.slice.call(stage.querySelectorAll('.overlay'));
+  var resultNode = $('result');
   var renderer = new global.Renderer(stage, {
     palette: PALETTE,
     onTapColumn: function (c) { tapColumn(c); }
   });
-  overlays.forEach(function (o) { stage.appendChild(o); });
+  stage.appendChild(resultNode);
 
   function loadLevel(i) {
     if (i < 0 || i >= levels.length) return;
@@ -57,8 +57,10 @@
     state = E.createState(level());
     history = [];
     stage.className = 'stage theme-' + (level().theme || 'city');
-    overlays.forEach(function (o) { stage.appendChild(o); });
+    stage.appendChild(resultNode);
+    continuesUsed = 0;
     renderer.render(state);
+    showResult();
     renderTop();
     renderEditor();
     renderPlayMetrics(analysisCache[idx]);
@@ -75,6 +77,7 @@
     busy = true;
     renderer.animateMove(state, ev, function () {
       setTimeout(function () { busy = false; }, F.get('inputLock'));
+      showResult();
     });
     renderTop();
     logMoves(ev);
@@ -86,7 +89,9 @@
     stopAutoplay();
     if (!history.length) return;
     state = history.pop();
+    stage.classList.remove('won', 'lost');
     renderer.render(state);
+    hideResult();
     renderTop();
     logMoves();
   }
@@ -166,6 +171,175 @@
     }
     $('prevLv').disabled = idx === 0;
     $('nextLv').disabled = idx === levels.length - 1;
+  }
+
+  /* ---------------- result screen ---------------- */
+
+  var MAX_CONTINUE = 1;
+  var CONTINUE_MOVES = 5;
+  var continuesUsed = 0;
+
+  /* How many more moves would actually finish from where the player is stuck.
+   * Offering "+5 moves" on a board that needs 14 more is a lie, and on a board
+   * that cannot be finished at all it is a worse one. */
+  function movesNeededFrom(s) {
+    var r = S.solve(s, { nodeCap: 120000 });
+    if (r.solved) return { n: r.minMoves, exact: true };
+    var g = S.greedySolve(s, false);
+    if (g.won) return { n: g.moves.length, exact: false };
+    return null;
+  }
+
+  function goNextLevel() { loadLevel(idx + 1); renderSetTable(); }
+
+  function continueRun(extra) {
+    continuesUsed++;
+    state.movesLeft += extra;
+    state.status = 'playing';
+    stage.classList.remove('lost');
+    renderer.render(state);
+    renderTop();
+    logMoves();
+    hideResult();
+    note('+' + extra + ' move (lần continue ' + continuesUsed + '/' + MAX_CONTINUE + ')');
+  }
+
+  function resultPlan(s) {
+    var done = s.locked.filter(Boolean).length;
+
+    if (s.status === 'won') {
+      var spare = s.movesLeft;
+      var last = idx >= levels.length - 1;
+      var plan = {
+        title: 'HOÀN THÀNH',
+        sub: s.movesUsed + '/' + s.budget + ' move · thừa ' + spare,
+        primary: last
+          ? { label: 'Chơi lại level này', fn: restart }
+          : { label: 'Level ' + (levels[idx + 1].id != null ? levels[idx + 1].id : idx + 2) + ' →', fn: goNextLevel },
+        secondary: last
+          ? [{ label: '↺ Về level đầu', fn: function () { loadLevel(0); renderSetTable(); } }]
+          : [{ label: '↺ Chơi lại', fn: restart }]
+      };
+      var a = analysisCache[idx];
+      if (spare / s.budget > 0.5) {
+        plan.note = 'Còn thừa <b>' + spare + '/' + s.budget + '</b> move. Budget đang rộng quá — ' +
+                    'chạy Playtest rồi đặt lại theo mốc win 75%.';
+      } else if (spare <= 1) {
+        plan.note = 'Thắng sát nút (' + spare + ' move dư). Budget đang chặt — kiểm tra player ẩu có qua nổi không.';
+      }
+      return plan;
+    }
+
+    /* lost */
+    var need = movesNeededFrom(s);
+    var plan2 = { title: 'HẾT MOVE', sub: 'xong ' + done + '/' + s.cols + ' cột · dùng ' + s.movesUsed + ' move' };
+
+    if (!need) {
+      plan2.primary = { label: '↺ Chơi lại', fn: restart };
+      plan2.secondary = [{ label: 'Undo 1 nước', fn: undo }];
+      plan2.note = 'Solver không đo được trong ngân sách tìm kiếm nên chưa biết cần thêm bao nhiêu move. ' +
+                   '<b>Không có nghĩa là thế cờ chết</b> — game này không có ngõ cụt, mọi thế đều giải được.';
+      return plan2;
+    }
+
+    var canContinue = continuesUsed < MAX_CONTINUE && need.n <= CONTINUE_MOVES;
+    if (canContinue) {
+      plan2.primary = { label: '+' + CONTINUE_MOVES + ' move, chơi tiếp', fn: function () { continueRun(CONTINUE_MOVES); } };
+      plan2.secondary = [{ label: '↺ Chơi lại', fn: restart }];
+      plan2.note = 'Chỉ còn thiếu <b>' + need.n + ' move</b> là xong. Đây đúng là khoảnh khắc ' +
+                   'bán booster — player đã đầu tư cả ván và chỉ hụt một chút.';
+      return plan2;
+    }
+
+    plan2.primary = { label: '↺ Chơi lại', fn: restart };
+    plan2.secondary = [{ label: 'Undo 1 nước', fn: undo }];
+    if (continuesUsed >= MAX_CONTINUE) {
+      plan2.note = 'Đã dùng hết ' + MAX_CONTINUE + ' lần continue trong ván này.';
+    } else {
+      plan2.note = 'Còn cần <b>' + need.n + ' move' + (need.exact ? '' : '~') + '</b> nữa mới xong, ' +
+                   'nên +' + CONTINUE_MOVES + ' move không đủ cứu. Thua từ quá sớm — ' +
+                   'không phải khoảnh khắc bán booster.';
+    }
+    return plan2;
+  }
+
+  function hideResult() { clear(resultNode); }
+
+  function showResult() {
+    clear(resultNode);
+    if (!state || state.status === 'playing') return;
+    var plan = resultPlan(state);
+
+    var card = el('div', 'result-card', resultNode);
+    card.addEventListener('click', function (e) { e.stopPropagation(); });
+    el('div', 'result-title', card, plan.title);
+    el('div', 'result-sub', card, plan.sub);
+
+    var pb = el('button', 'result-primary', card, plan.primary.label);
+    pb.addEventListener('click', plan.primary.fn);
+
+    if (plan.secondary && plan.secondary.length) {
+      var row = el('div', 'result-secondary', card);
+      plan.secondary.forEach(function (sec) {
+        var b = el('button', null, row, sec.label);
+        b.addEventListener('click', sec.fn);
+      });
+    }
+    el('div', 'result-tap', card, 'bấm bất kỳ đâu để ' + plan.primary.label.replace(/^[↺+]\s*/, '').toLowerCase());
+    if (plan.note) el('div', 'result-note', card).innerHTML = plan.note;
+
+    /* tapping anywhere outside the card takes the smart action */
+    resultNode.onclick = plan.primary.fn;
+  }
+
+  /* ---------------- tuning history ---------------- */
+
+  var levelHistory = [];
+
+  function applyLevelChange(newLevel, label) {
+    levelHistory.push({ label: label, level: JSON.parse(JSON.stringify(levels[idx])), at: idx });
+    levels[idx] = newLevel;
+    analysisCache = {};
+    lastMeasure = null;
+    loadLevel(idx);
+    renderSetTable();
+    renderBanner();
+  }
+
+  function revertLevelChange() {
+    var last = levelHistory.pop();
+    if (!last) return;
+    levels[last.at] = last.level;
+    analysisCache = {};
+    lastMeasure = null;
+    loadLevel(last.at);
+    renderSetTable();
+    renderBanner();
+    note('đã hoàn tác: ' + last.label);
+  }
+
+  function renderBanner() {
+    var box = clear($('tuneBanner'));
+    if (!levelHistory.length) return;
+    var last = levelHistory[levelHistory.length - 1];
+    var what = el('span', 'what', box);
+    what.innerHTML = 'Đang thử: <b>' + last.label + '</b>';
+    el('span', 'grow', box);
+    var play = el('button', 'primary', box, '▶ Chơi thử');
+    play.addEventListener('click', function () { switchTab('play'); restart(); });
+    var keep = el('button', null, box, '✔ Giữ');
+    keep.addEventListener('click', function () {
+      levelHistory.length = 0;
+      renderBanner();
+      note('đã giữ thay đổi');
+    });
+    var back = el('button', null, box, '↶ Hoàn tác (' + levelHistory.length + ')');
+    back.addEventListener('click', revertLevelChange);
+  }
+
+  function switchTab(name) {
+    var btn = document.querySelector('#tabs button[data-tab="' + name + '"]');
+    if (btn) btn.click();
   }
 
   /* ---------------- metrics ---------------- */
@@ -365,12 +539,15 @@
       if (leverTopic) lname.appendChild(global.Help.badge(leverTopic));
       var apply = el('button', 'primary', head, 'Áp dụng');
       apply.addEventListener('click', function () {
-        levels[idx] = item.level;
-        analysisCache = {};
-        afterEdit();
-        renderSetTable();
+        applyLevelChange(item.level, item.label);
         measureCurrent();
         note('đã áp dụng: ' + item.label);
+      });
+      var tryIt = el('button', null, head, '▶ Chơi thử');
+      tryIt.addEventListener('click', function () {
+        applyLevelChange(item.level, item.label);
+        measureCurrent();
+        switchTab('play');
       });
       el('div', null, card, item.label);
       el('div', 'hint', card, item.why);
@@ -480,9 +657,11 @@
       f.appendChild(mkFlag('good', 'Win ' + pct(avg.winRateAtBudget) + ' ở budget ' + rep.level.moves + ' — vùng hợp lý.'));
     }
     if (avg.ceiling < 0.99) {
-      f.appendChild(mkFlag('warn', pct(1 - avg.ceiling) + ' lượt chơi không bao giờ thắng dù budget vô hạn — ' +
-        'player greedy tự dồn mình vào thế kẹt. Trung bình xong ' +
-        (avg.avgColumnsOnStuck == null ? '?' : avg.avgColumnsOnStuck.toFixed(1)) + '/' + rep.level.cols + ' cột trước khi bí.'));
+      f.appendChild(mkFlag('warn', pct(1 - avg.ceiling) + ' lượt chơi không về đích dù budget vô hạn. ' +
+        'KHÔNG phải thế cờ chết — game này không có ngõ cụt, mọi thế đều giải được. ' +
+        'Đây là player bấm theo bản năng bị lặp vòng: đẩy xe qua lại giữa hai cột mà không tiến. ' +
+        'Trung bình kẹt ở ' + (avg.avgColumnsOnLoop == null ? '?' : avg.avgColumnsOnLoop.toFixed(1)) +
+        '/' + rep.level.cols + ' cột. Level dễ gây lặp vòng thì player thật sẽ thấy bế tắc dù vẫn còn cửa.'));
     }
     var spread = rep.profiles[0].winRateAtBudget - rep.profiles[2].winRateAtBudget;
     f.appendChild(mkFlag(spread > 0.3 ? 'good' : 'warn',
@@ -686,9 +865,10 @@
       seed: +$('genSeed').value || 1
     });
     var ab = G.autoBudget(lv, +$('slackTarget').value || 1.6, 200000);
-    L.grid = lv.grid; L.pad = lv.pad;
-    L.moves = ab ? ab.budget : L.moves;
-    afterEdit();
+    var next = JSON.parse(JSON.stringify(L));
+    next.grid = lv.grid; next.pad = lv.pad;
+    next.moves = ab ? ab.budget : L.moves;
+    applyLevelChange(next, 'generate ' + L.cols + '×' + L.rows);
     note(ab ? ('generated: minMoves ' + ab.minMoves + (ab.exact ? '' : '~') + ', budget ' + ab.budget)
             : 'generated (không đo được minMoves)');
   }
@@ -922,9 +1102,9 @@
   $('applyBudget').addEventListener('click', function () {
     var a = analysisCache[idx];
     if (!a || a.minMoves == null) { note('analyze trước đã'); return; }
-    level().moves = Math.max(1, Math.ceil(a.minMoves * (+$('slackTarget').value || 1.6)));
-    afterEdit();
-    renderSetTable();
+    var nb = JSON.parse(JSON.stringify(level()));
+    nb.moves = Math.max(1, Math.ceil(a.minMoves * (+$('slackTarget').value || 1.6)));
+    applyLevelChange(nb, 'budget → ' + nb.moves);
   });
 
   $('edCols').addEventListener('change', function () { resizeLevel(+this.value, level().rows); });
@@ -988,6 +1168,12 @@
 
   document.addEventListener('keydown', function (e) {
     if (/input|textarea|select/i.test(e.target.tagName)) return;
+    if (state && state.status !== 'playing' && (e.key === 'Enter' || e.key === ' ')) {
+      e.preventDefault();
+      var pb = resultNode.querySelector('.result-primary');
+      if (pb) pb.click();
+      return;
+    }
     if (e.key >= '1' && e.key <= '9') tapColumn(+e.key - 1);
     else if (e.key === 'r') restart();
     else if (e.key === 'u' || e.key === 'z') undo();
@@ -1004,6 +1190,7 @@
 
   renderBrushes();
   renderFeel();
+  renderBanner();
   loadLevel(0);
   renderSetTable();
   global.CarTool = {

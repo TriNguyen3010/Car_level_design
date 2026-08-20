@@ -306,13 +306,47 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
   0% { scale: 1; } 45% { scale: var(--pop); } 100% { scale: 1; }
 }
 
-.overlay {
+/* ---------- result screen ---------- */
+.result {
   position: absolute; inset: 0; z-index: 10; display: none; place-items: center;
-  background: rgba(8,10,16,.62); font-size: 22px; font-weight: 800; letter-spacing: .04em;
+  background: rgba(8,10,16,.72); cursor: pointer; padding: 16px;
+  animation: resultIn .22s ease-out;
 }
-.stage.won .overlay.win, .stage.lost .overlay.lose { display: grid; }
-.overlay.win { color: #7ee089; }
-.overlay.lose { color: #e88b7f; }
+.stage.won .result, .stage.lost .result { display: grid; }
+@keyframes resultIn { from { opacity: 0; } to { opacity: 1; } }
+.result-card {
+  background: var(--panel); border: 1px solid var(--line); border-radius: 14px;
+  padding: 16px 18px; text-align: center; width: 100%; max-width: 300px;
+  box-shadow: 0 16px 44px rgba(0,0,0,.55);
+}
+.result-title { font-size: 21px; font-weight: 800; letter-spacing: .04em; margin-bottom: 3px; }
+.stage.won .result-title { color: #7ee089; }
+.stage.lost .result-title { color: #e88b7f; }
+.result-sub { color: var(--ink-dim); font-size: 12px; margin-bottom: 12px; }
+.result-primary {
+  width: 100%; padding: 11px; font-size: 15px; font-weight: 700;
+  background: var(--accent); border-color: var(--accent); color: #fff; border-radius: 9px;
+}
+.result-secondary { display: flex; gap: 6px; justify-content: center; margin-top: 8px; flex-wrap: wrap; }
+.result-secondary button { font-size: 12px; padding: 5px 10px; }
+.result-tap { color: var(--ink-dim); font-size: 11px; margin-top: 9px; }
+.result-note {
+  margin-top: 11px; padding: 7px 9px; border-radius: 7px; text-align: left;
+  border-left: 3px solid var(--warn); background: rgba(232,177,58,.08);
+  color: var(--ink-dim); font-size: 11px; line-height: 1.45;
+}
+.result-note b { color: var(--ink); }
+
+/* ---------- tuning banner ---------- */
+#tuneBanner:empty { display: none; }
+#tuneBanner {
+  display: flex; align-items: center; gap: 9px; flex-wrap: wrap;
+  padding: 7px 12px; background: rgba(74,144,217,.13);
+  border-bottom: 1px solid var(--accent); color: var(--ink);
+}
+#tuneBanner .grow { flex: 1; }
+#tuneBanner .what { color: var(--ink-dim); }
+#tuneBanner .what b { color: var(--ink); }
 
 .log { font-family: ui-monospace, Menlo, monospace; font-size: 11px; color: var(--ink-dim);
        max-height: 150px; overflow: auto; background: #10131a; border: 1px solid var(--line);

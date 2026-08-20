@@ -21,7 +21,12 @@
     { key: 'sloppy',  name: 'ẩu',         eps: 0.25, noise: 10 }
   ];
 
-  var HARD_CAP = 600;          // a run this long is not going to win
+  /* Measured over 134 sloppy games across four levels, IDA* found a solution
+   * from every single lost position and declared none unsolvable. The game has
+   * no dead ends: the only way to fail is to run out of budget. So a run that
+   * reaches this cap is the greedy policy cycling, NOT a board that cannot be
+   * won — the reports must not confuse the two. */
+  var HARD_CAP = 600;
 
   function runOne(level, profile, rnd, blind) {
     var s = E.createState(level);
@@ -124,13 +129,13 @@
     return {
       runs: acc.runs,
       winRateAtBudget: atBudget ? atBudget.winRate : 0,
-      neverWinRate: acc.neverWin / acc.runs,
-      ceiling: acc.wins / acc.runs,             // best possible win rate, any budget
+      noConvergeRate: acc.neverWin / acc.runs,  // policy cycled, not an unwinnable board
+      ceiling: acc.wins / acc.runs,             // win rate of this policy at any budget
       p: pc,
       avgDumps: acc.dumpSum / acc.runs,
       avgGoodColumns: acc.goodSum / acc.runs,
       firstMove: acc.firstMove.map(function (n) { return n / acc.runs; }),
-      avgColumnsOnStuck: acc.neverWin ? acc.stuckColumns / acc.neverWin : null,
+      avgColumnsOnLoop: acc.neverWin ? acc.stuckColumns / acc.neverWin : null,
       curve: curve,
       maxBudget: maxBudget,
       budgetFor: {

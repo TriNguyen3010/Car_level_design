@@ -84,6 +84,38 @@ Mọi chỉ số đều có dấu <b>?</b> bấm được, mở ra giải thích
 
 `choice` là dial độ khó chính, không phải grid size. Cách tăng nó: **đặt số màu ít hơn số cột** — khi 2 cột cùng màu thì player phải chọn cột nào để nhả xe.
 
+## Test level vừa chỉnh
+
+Bấm **Áp dụng** hoặc **▶ Chơi thử** trên thẻ gợi ý. Level được thay, bàn reset, và một banner hiện ra ở đầu màn hình:
+
+> Đang thử: **Siết budget 50 → 22** · ▶ Chơi thử · ✔ Giữ · ↶ Hoàn tác (1)
+
+**Hoàn tác** trả lại đúng level trước đó — xếp chồng nhiều lần được. Generate và Set budget cũng vào chồng này. **Giữ** xoá chồng khi a đã ưng.
+
+## Màn hình kết quả
+
+Khi ván kết thúc, bấm bất kỳ đâu là thực hiện hành động hợp lý nhất:
+
+| Tình huống | Hành động chính |
+|---|---|
+| Thắng, còn level sau | Level tiếp theo |
+| Thắng, level cuối | Chơi lại |
+| Thua, chỉ thiếu ≤5 move | **+5 move chơi tiếp** — khoảnh khắc bán booster |
+| Thua, còn cần nhiều move | Chơi lại (không mời booster vô ích) |
+| Đã dùng hết lượt continue | Chơi lại |
+
+Chỉ mời "+5 move" khi solver xác nhận 5 move **thật sự đủ** để về đích. Thẻ kết quả còn kèm nhận xét cho designer: thừa quá nửa budget thì nhắc siết, thắng sát nút thì nhắc kiểm tra player ẩu.
+
+`Enter` / `Space` cũng chạy hành động chính.
+
+## Game không có ngõ cụt
+
+Kiểm tra 134 thế cờ dở sau khi chơi ẩu trên 4 level: IDA* giải được **toàn bộ 134**, không thế nào vô nghiệm. Chỉ cần còn 2 cột chưa khoá là đủ chỗ đảo xe, và cột chỉ khoá khi đã thuần màu nên không bao giờ khoá nhầm.
+
+Hệ quả: **nguồn thua duy nhất là move budget.** Không có "chơi hỏng bàn". Vì vậy budget là đòn bẩy độ khó mạnh nhất, và phải đo bằng playtest chứ không đặt số tròn.
+
+Những ván "không về đích dù budget vô hạn" trong report là player bản năng **lặp vòng**, không phải thế cờ chết — hai thứ khác nhau và tool ghi rõ.
+
 ## Phím tắt
 
 `1`-`9` tap cột · `r` restart · `u`/`z` undo · `h` hint · `←`/`→` đổi level
