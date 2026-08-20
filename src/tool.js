@@ -187,6 +187,65 @@
     $('nextLv').disabled = idx === levels.length - 1;
   }
 
+  /* ---------------- welcome ----------------
+   * The tool opens with three tabs instead of six, which reads as fewer
+   * features rather than a deliberate split, so the split gets explained once
+   * up front. Dismissal is remembered; the Hướng dẫn button reopens it. */
+
+  var SEEN_KEY = 'carsort.guide.v1';
+
+  var GUIDE_HTML =
+    '<b>Tool này có 2 chế độ.</b> Tách riêng để một buổi playtest không bao giờ vô tình ' +
+    'thành một buổi sửa level — đó là điều kiện để các con số còn đáng tin.' +
+
+    '<div class="card" style="margin-top:11px">' +
+      '<div style="font-size:14px;font-weight:700;color:var(--ink)">▶ Test <span style="font-weight:400;color:var(--ink-dim);font-size:12px">— mặc định khi mở tool</span></div>' +
+      '<div style="margin:5px 0"><b>Mục tiêu:</b> chơi thật và đọc chỉ số. Không sửa được gì, kể cả vô tình.</div>' +
+      '<b>Làm được:</b>' +
+      '<ul class="modal-steps">' +
+        '<li>Chơi level — click cột hoặc bấm phím <b>1–9</b></li>' +
+        '<li><b>Đo level này</b> → lời giải tối ưu, slack, độ sâu, win rate của 3 hạng player</li>' +
+        '<li><b>Playtest</b> → chạy 10.000 ván, ra đường cong budget → win rate</li>' +
+        '<li><b>Level Set</b> → bảng chỉ số cả set + curve (chỉ xem)</li>' +
+      '</ul>' +
+    '</div>' +
+
+    '<div class="card">' +
+      '<div style="font-size:14px;font-weight:700;color:var(--ink)">⚙ Level Design</div>' +
+      '<div style="margin:5px 0"><b>Mục tiêu:</b> sửa level và cân độ khó.</div>' +
+      '<b>Thêm 3 tab:</b>' +
+      '<ul class="modal-steps">' +
+        '<li><b>Tune</b> → 4 template độ khó (Tập lái · Giờ cao điểm · Bãi chật · Giờ đêm), ' +
+            'và gợi ý khó/dễ hơn — mỗi phương án được playtest thật rồi xếp theo tác động đo được</li>' +
+        '<li><b>Edit</b> → vẽ lưới, đổi kích thước bàn, generate</li>' +
+        '<li><b>Feel</b> → timing animation, kiểu dáng xe, SFX</li>' +
+        '<li><b>Level Set</b> → thêm / nhân bản / xoá level, export JSON</li>' +
+      '</ul>' +
+      'Sửa gì cũng vào chồng <b>Hoàn tác</b> ở banner trên cùng, nên không thí nghiệm nào là một chiều.' +
+    '</div>' +
+
+    '<div class="flag" style="margin-top:4px">Đổi chế độ bằng nút góc phải trên. Ở Level Design có ' +
+    'vạch vàng trên thanh menu để luôn biết mình đang ở đâu. Mọi con số đều có dấu ' +
+    '<span class="help" data-help="do-sau"></span> bấm được để xem giải thích kèm ví dụ.</div>';
+
+  function showGuide(force) {
+    if (!force) {
+      try { if (localStorage.getItem(SEEN_KEY)) return; } catch (e) {}
+    }
+    global.Modal.open({
+      title: 'Hai chế độ của tool',
+      body: GUIDE_HTML,
+      wide: true,
+      sticky: true,
+      actions: [
+        { label: 'Tôi đã hiểu rồi', primary: true, fn: function () {
+            try { localStorage.setItem(SEEN_KEY, '1'); } catch (e) {}
+          } },
+        { label: 'Để sau', fn: function () {} }
+      ]
+    });
+  }
+
   /* ---------------- modes ----------------
    * Test is what the tool opens in: play the level and read its numbers, with
    * nothing on screen that can change it. Design adds the authoring surface.
@@ -579,30 +638,117 @@
     $('tplJson').value = JSON.stringify(DF.toJSON(), null, 2);
   }
 
+  function critTable(chk) {
+    return chk.rows.map(function (r) {
+      return '<div class="crit"><span class="' + (r.ok ? 'y' : 'm') + '">' + (r.ok ? '✓' : '✗') +
+             '</span><span class="lbl">' + r.label + '</span><span>' + r.value +
+             '</span><span class="band">cần ' + r.band + '</span></div>';
+    }).join('');
+  }
+
+  /* Applying a tier should end with a level that IS that tier, so the fit
+   * escalates instead of giving up: grow the board to the tier's minimum if it
+   * is too small, then widen the seed search, then add a row. It stops at the
+   * first board that passes every criterion, and if nothing does it says which
+   * criteria it could not reach rather than just failing. */
+  function fitPlan(L, tpl) {
+    var c0 = Math.max(L.cols, tpl.minCols || 2);
+    var r0 = Math.max(L.rows, tpl.minRows || 2);
+    var steps = [
+      { cols: c0, rows: r0, tries: 8, label: c0 + '×' + r0 },
+      { cols: c0, rows: r0, tries: 16, label: c0 + '×' + r0 + ', tìm rộng hơn' }
+    ];
+    if (r0 < 9) steps.push({ cols: c0, rows: r0 + 1, tries: 12, label: c0 + '×' + (r0 + 1) + ', thêm 1 hàng' });
+    if (c0 < 9 && r0 < 9) steps.push({ cols: c0 + 1, rows: r0 + 1, tries: 12, label: (c0 + 1) + '×' + (r0 + 1) });
+    return steps;
+  }
+
   function fitTemplate(key) {
-    var v = E.validate(level());
-    if (!v.ok) { note('level chưa hợp lệ'); return; }
-    var warn = DF.sizeWarning(level(), key);
-    if (warn && !confirm(warn + '\n\nVẫn sinh thử?')) return;
-    Array.prototype.forEach.call($('tplCards').querySelectorAll('button'), function (b) { b.disabled = true; });
-    DF.fit(level(), key, PALETTE, {
-      tries: +$('tplTries').value || 8,
-      runs: 600,
-      seed: +$('tplSeed').value || 1
-    }, function (i, n) { $('tplProgress').textContent = i + '/' + n; },
-    function (best) {
-      $('tplProgress').textContent = '';
-      if (!best) { note('không sinh được bàn hợp lệ cho tier này'); renderTemplates(); return; }
-      applyLevelChange(best.level, 'template ' + DF.TEMPLATES[key].name);
-      lastMeasure = best.measure;
-      renderTunerScore(best.measure);
-      renderTemplates();
-      var c = best.check;
-      note('template ' + DF.TEMPLATES[key].name + ': đạt ' + c.pass + '/' + c.total +
-           ' tiêu chí, budget ' + best.level.moves +
-           (c.pass < c.total ? ' — lệch: ' + c.rows.filter(function (r) { return !r.ok; })
-              .map(function (r) { return r.label + ' ' + r.value; }).join(', ') : ''));
-    });
+    if (!E.validate(level()).ok) { global.Modal.alert('Chưa sinh được', 'Level hiện tại không hợp lệ.'); return; }
+    var tpl = DF.TEMPLATES[key];
+    var L = level();
+    var steps = fitPlan(L, tpl);
+    var grew = steps[0].cols !== L.cols || steps[0].rows !== L.rows;
+
+    var head = '<b>' + tpl.name + '</b> — trục: ' + tpl.axis;
+    if (grew) {
+      head += '<br>Bàn ' + L.cols + '×' + L.rows + ' nhỏ hơn mức tối thiểu ' +
+              (tpl.minCols || 2) + '×' + (tpl.minRows || 2) + ' của tier, nên sẽ mở rộng lên <b>' +
+              steps[0].cols + '×' + steps[0].rows + '</b>. Bàn ngắn thì lời giải ngắn, không đủ số nước để player kịp thua.';
+    }
+    var prog = global.Modal.progress('Đang sinh bàn đạt tiêu chí', head);
+
+    var si = 0, best = null, log = [];
+
+    function runStep() {
+      if (si >= steps.length) { finish(); return; }
+      var st = steps[si];
+      var probe = JSON.parse(JSON.stringify(L));
+      probe.cols = st.cols; probe.rows = st.rows;
+      probe.grid = [];
+      for (var c = 0; c < st.cols; c++) {
+        probe.grid[c] = [];
+        for (var r = 0; r < st.rows; r++) probe.grid[c][r] = 'yellow';
+      }
+      probe.pad = 'REV';
+
+      DF.fit(probe, key, PALETTE, {
+        tries: st.tries, runs: 600,
+        seed: (+$('tplSeed').value || 1) + si * 131
+      }, function (i, n) {
+        prog.update((si + i / n) / steps.length, 'bước ' + (si + 1) + '/' + steps.length +
+                    ' · ' + st.label + ' · bàn thử ' + i + '/' + n);
+      }, function (res) {
+        if (res && (!best || res.distance < best.distance)) best = res;
+        log.push(st.label + ': ' + (res ? res.check.pass + '/' + res.check.total : 'không sinh được'));
+        si++;
+        if (best && best.check.pass === best.check.total) finish();
+        else runStep();
+      });
+    }
+
+    function finish() {
+      prog.close();
+      if (!best) {
+        global.Modal.alert('Không sinh được',
+          'Không tạo được bàn hợp lệ nào cho tier <b>' + tpl.name + '</b>.<br><br>' + log.join('<br>'));
+        renderTemplates();
+        return;
+      }
+      var c = best.check, all = c.pass === c.total;
+      var lv = best.level;
+      var body = '<b>' + tpl.name + '</b> · bàn <b>' + lv.cols + '×' + lv.rows +
+                 '</b> · budget <b>' + lv.moves + '</b>' +
+                 (all ? ' · <span style="color:var(--good)">đạt cả ' + c.total + ' tiêu chí</span>'
+                      : ' · <span style="color:var(--warn)">đạt ' + c.pass + '/' + c.total + '</span>') +
+                 '<div style="margin-top:9px">' + critTable(c) + '</div>' +
+                 '<ul class="modal-steps">' + log.map(function (l) { return '<li>' + l + '</li>'; }).join('') + '</ul>' +
+                 (all ? '' : '<div class="flag warn" style="margin-top:8px">Đã thử hết ' + steps.length +
+                    ' bước mà vẫn lệch. Tăng "số bàn thử", đổi seed, hoặc nới dải của tier trong phần Sửa template.</div>');
+
+      global.Modal.open({
+        title: all ? 'Đã sinh xong' : 'Gần đạt',
+        body: body,
+        wide: true,
+        actions: [
+          { label: 'Áp dụng', primary: true, fn: function () {
+              applyLevelChange(lv, 'template ' + tpl.name + ' ' + lv.cols + '×' + lv.rows);
+              lastMeasure = best.measure;
+              renderTunerScore(best.measure);
+              renderTemplates();
+              note('template ' + tpl.name + ': ' + c.pass + '/' + c.total + ' tiêu chí, bàn ' +
+                   lv.cols + '×' + lv.rows + ', budget ' + lv.moves);
+            } },
+          { label: 'Sinh lại (seed khác)', fn: function () {
+              $('tplSeed').value = (+$('tplSeed').value || 1) + 1;
+              fitTemplate(key);
+            } },
+          { label: 'Bỏ', fn: function () { renderTemplates(); } }
+        ]
+      });
+    }
+
+    runStep();
   }
 
   function rebudgetTemplate(key) {
@@ -1224,8 +1370,8 @@
     var txt = $('exportJson').value.trim();
     if (!txt) return;
     var data;
-    try { data = JSON.parse(txt); } catch (e) { alert('JSON lỗi: ' + e.message); return; }
-    if (!data.levels || !data.levels.length) { alert('không thấy mảng levels'); return; }
+    try { data = JSON.parse(txt); } catch (e) { global.Modal.alert('JSON lỗi', e.message); return; }
+    if (!data.levels || !data.levels.length) { global.Modal.alert('Import lỗi', 'Không thấy mảng <b>levels</b> trong JSON.'); return; }
     if (data.palette) Object.assign(PALETTE, data.palette);
     if (data.feel) { F.load(data.feel); renderFeel(); }
     levels = data.levels;
@@ -1261,12 +1407,13 @@
     }, 20);
   });
   $('modeToggle').addEventListener('click', function () { setMode(mode === 'test' ? 'design' : 'test'); });
+  $('helpGuide').addEventListener('click', function () { showGuide(true); });
   $('tplLoad').addEventListener('click', function () {
     try {
       DF.load(JSON.parse($('tplJson').value));
       renderTemplates();
       note('đã nạp template');
-    } catch (e) { alert('template JSON lỗi: ' + e.message); }
+    } catch (e) { global.Modal.alert('Template JSON lỗi', e.message); }
   });
   $('tplReset').addEventListener('click', function () {
     DF.load(DEFAULT_TEMPLATES);
@@ -1300,7 +1447,7 @@
   });
   $('feelLoad').addEventListener('click', function () {
     try { F.load(JSON.parse($('feelJson').value)); renderFeel(); if (state) renderer.render(state); }
-    catch (e) { alert('feel JSON lỗi: ' + e.message); }
+    catch (e) { global.Modal.alert('Feel JSON lỗi', e.message); }
   });
   $('feelCopy').addEventListener('click', function () { $('feelJson').select(); document.execCommand('copy'); });
 
@@ -1379,6 +1526,7 @@
   renderBanner();
   setMode('test');
   loadLevel(0);
+  showGuide(false);
 
   /* Sprites arrive asynchronously; redraw once they do. */
   if (global.Sprites) {

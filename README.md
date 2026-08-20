@@ -14,6 +14,10 @@ Góc trái trên có badge **build hh:mm dd-mm** = thời điểm `src/tool.js` 
 
 **Mở ra là chế độ Test — chỉ có 3 tab.** Bấm **⚙ Level Design** góc phải trên mới ra Tune (4 template độ khó + gợi ý khó/dễ), Edit (vẽ lưới), Feel (animation + kiểu dáng xe).
 
+Lần đầu mở tool có popup giải thích 2 chế độ. Bấm **Tôi đã hiểu rồi** để không hiện lại; mở lại bất cứ lúc nào bằng nút **Hướng dẫn**.
+
+Tool không dùng `alert`/`confirm` của trình duyệt — mọi hộp thoại là modal trong tool.
+
 ## Luật game (như code đang implement)
 
 - `grid[col][row]`, **row 0 = đỉnh cột**.
@@ -54,7 +58,7 @@ Bốn tier, mỗi tier **tì vào một trục khác nhau**. Bốn tier cùng kh
 **Bãi chật không khó hơn Giờ cao điểm** — đo trên 14 bàn từ 4×5 đến 6×6, win của player trung bình gần y hệt, chỉ độ sâu là khác. Nguyên nhân: ít màu hơn số cột cho player nhiều chỗ nhả xe đúng hơn nên bớt move phí, triệt tiêu phần nào sức ép budget. Thang độ khó thật là **Tập lái → Giờ cao điểm ≈ Bãi chật → Giờ đêm**; thang độ sâu là **Tập lái → Giờ cao điểm → Bãi chật ≈ Giờ đêm**. Xen kẽ hai tier giữa để đổi vị, đừng coi là hai bậc.
 
 Mỗi thẻ có:
-- **Áp dụng** — sinh thử N bàn theo knob của tier, playtest thật từng bàn, giữ bàn rơi gần dải mục tiêu nhất, rồi dò budget trong dải slack cho tới khi win rate vào dải.
+- **Áp dụng** — sinh cho tới khi **đạt tiêu chí**, không chặn lại. Bàn nhỏ hơn mức tối thiểu của tier thì tự mở rộng lên; vẫn lệch thì mở rộng tìm kiếm; vẫn lệch thì thêm 1 hàng. Dừng ở bàn đầu tiên đạt đủ. Kiểm chứng: 20/20 trường hợp bắt đầu từ 3×3 đến 6×6 đều đạt 7/7 sau leo thang. Kết quả hiện trong modal kèm bảng tiêu chí và nhật ký từng bước, có nút Sinh lại (seed khác) và Bỏ.
 - **Chỉ đặt lại budget** — giữ nguyên lưới a đã vẽ, chỉ dò budget.
 - **x/7 tiêu chí** — level hiện tại đạt bao nhiêu dải, kèm giá trị thật vs dải cần.
 

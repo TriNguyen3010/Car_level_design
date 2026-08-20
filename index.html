@@ -26,6 +26,7 @@
     <button id="autoplay">Autoplay</button>
     <span class="grow"></span>
     <span class="badge" id="statusBadge">playing</span>
+    <button id="helpGuide" title="Hướng dẫn 2 chế độ">Hướng dẫn</button>
     <span class="badge" id="buildStamp" title="thời điểm src/tool.js được sửa lần cuối — dùng để biết browser đã nạp bản mới chưa">build …</span>
     <button id="modeToggle" class="primary" title="Đổi giữa chơi thử và chỉnh sửa"></button>
   </div>
@@ -217,7 +218,7 @@
    the load order, which plain dynamic injection would not. */
 (function () {
   var t = Date.now();
-  [ 'help', 'sprites', 'engine', 'levels', 'solver', 'gen', 'playtest',
+  [ 'help', 'modal', 'sprites', 'engine', 'levels', 'solver', 'gen', 'playtest',
     'tuner', 'difficulty', 'feel', 'render', 'tool'
   ].forEach(function (m) {
     document.write('<script src="src/' + m + '.js?t=' + t + '"><\/script>');
