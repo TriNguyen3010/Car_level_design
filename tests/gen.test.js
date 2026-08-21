@@ -36,3 +36,63 @@ test('no cap means the generator is free to leave a solved column', function () 
   var lv = gen({ strays: 0 });
   ok(Math.max.apply(null, lv.grid.map(G.biggestRun)) > 2, 'expected a mostly solved board');
 });
+
+/* ---- legalize ---- */
+
+function box(cols, rows, fill) {
+  var grid = [];
+  for (var c = 0; c < cols; c++) {
+    grid[c] = [];
+    for (var r = 0; r < rows; r++) grid[c][r] = fill;
+  }
+  return { cols: cols, rows: rows, moves: 30, pad: 'REV', grid: grid };
+}
+
+var PAL = ['magenta', 'pink', 'purple', 'violet', 'lime', 'green', 'yellow', 'cyan'];
+
+test('legalize leaves an already legal board alone', function () {
+  var L = {
+    cols: 3, rows: 3, moves: 20, pad: 'REV',
+    grid: [['magenta', 'pink', 'magenta'], ['pink', 'magenta', 'pink'], ['purple', 'purple', 'purple']]
+  };
+  var before = JSON.stringify(L.grid);
+  G.legalize(L, PAL);
+  eq(JSON.stringify(L.grid), before);
+  eq(L.pad, 'REV');
+  ok(E.validate(L).ok, JSON.stringify(E.validate(L).errors));
+});
+
+test('legalize fixes the board a shrink-then-grow resize leaves behind', function () {
+  /* exactly what the editor produced: every hole filled with the first palette
+   * colour, so magenta ends up 5 on a 3-row board */
+  var L = {
+    cols: 3, rows: 3, moves: 10, pad: 'magenta',
+    grid: [['magenta', 'purple', 'magenta'], ['purple', 'pink', 'pink'], ['purple', 'magenta', 'magenta']]
+  };
+  eq(E.validate(L).ok, false);
+  G.legalize(L, PAL);
+  var v = E.validate(L);
+  ok(v.ok, JSON.stringify(v.errors));
+  Object.keys(v.counts).forEach(function (k) {
+    if (k === 'REV') return;
+    ok(v.counts[k] % L.rows === 0, k + ' = ' + v.counts[k] + ', rows = ' + L.rows);
+  });
+});
+
+test('legalize grows a board into legal shape', function () {
+  var L = box(3, 3, 'magenta');
+  L.cols = 5;                       // two columns of holes, the resize case
+  L.grid.push([null, null, null], [null, null, null]);
+  G.legalize(L, PAL);
+  ok(E.validate(L).ok, JSON.stringify(E.validate(L).errors));
+  eq(L.grid.length, 5);
+});
+
+test('legalize keeps a coloured column supplied', function () {
+  var L = box(4, 4, 'magenta');
+  L.coloredCols = [{ col: 2, color: 'cyan' }];
+  G.legalize(L, PAL);
+  var v = E.validate(L);
+  ok(v.ok, JSON.stringify(v.errors));
+  ok(v.counts.cyan >= L.rows, 'cyan = ' + v.counts.cyan);
+});

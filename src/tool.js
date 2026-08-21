@@ -2024,11 +2024,10 @@
 
   function resizeLevel(cols, rows) {
     var L = level(), grid = [];
-    var fill = Object.keys(PALETTE)[0];
     for (var c = 0; c < cols; c++) {
       grid[c] = [];
       for (var r = 0; r < rows; r++) {
-        grid[c][r] = (L.grid[c] && L.grid[c][r] != null) ? L.grid[c][r] : fill;
+        grid[c][r] = (L.grid[c] && L.grid[c][r] != null) ? L.grid[c][r] : null;
       }
     }
     L.cols = cols; L.rows = rows; L.grid = grid;
@@ -2037,6 +2036,11 @@
       L[k] = L[k].filter(function (x) { return x.col < cols; });
       if (!L[k].length) delete L[k];
     });
+    /* A resize drops cars or invents them, so the colour counts stop being whole
+     * columns and the level reads "invalid" with nothing on screen explaining
+     * why. Refill the gaps with the cars a legal board actually needs; cells
+     * that already fit are left alone. */
+    G.legalize(L, Object.keys(PALETTE));
     afterEdit();
   }
 

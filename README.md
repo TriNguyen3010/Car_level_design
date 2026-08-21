@@ -332,6 +332,10 @@ Nút **Ẩn puzzle** thu khung bàn lại để bảng số và chart dùng hế
 
 Thuần hiển thị, không chạm engine: state, move count, cột đã khoá đều giữ nguyên, và tap cột trong lúc ẩn vẫn tính nước bình thường. Hình học bàn tính từ kích thước thật của khung nên khi ẩn mọi lệnh vẽ bị hoãn lại, hiện lên thì vẽ lại đúng.
 
+## Đổi kích thước bàn
+
+Đổi `cols × rows` ở tab Edit thì bàn được **chuẩn hoá lại ngay** (`Gen.legalize`): thu cột là mất xe, thêm cột là phải sinh xe, kiểu nào cũng làm màu không còn đủ bội số của rows và level báo `invalid` mà không nói vì sao. `legalize` dựng đúng túi xe một bàn hợp lệ cần — `rows` xe cho mỗi màu-cột, cộng 1 xe lẻ cho pad — rồi giữ lại mọi ô nào túi còn trả được. Bàn đang hợp lệ thì không đổi gì; luật cột nằm ngoài phạm vi bàn mới thì bị bỏ.
+
 ## Cột khoá & cột màu
 
 Tab **Edit** → khối **Luật cột**: mỗi cột một ô, gồm

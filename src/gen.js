@@ -144,6 +144,78 @@
     return level;
   }
 
+  /* Which colour owns each column. Coloured columns get what they asked for,
+   * then whatever the board already uses most, then unused palette entries. */
+  function columnColors(level, paletteNames) {
+    var cols = level.cols, want = [], seen = {};
+    (level.coloredCols || []).forEach(function (x) {
+      if (x && x.color && !seen[x.color]) { seen[x.color] = 1; want.push(x.color); }
+    });
+    var counts = {};
+    for (var c = 0; c < cols; c++) {
+      for (var r = 0; r < level.rows; r++) {
+        var cell = (level.grid[c] || [])[r];
+        if (cell == null) continue;
+        var col = String(cell).replace(/^\?/, '');
+        if (col === REV) continue;
+        counts[col] = (counts[col] || 0) + 1;
+      }
+    }
+    Object.keys(counts).sort(function (a, b) { return counts[b] - counts[a]; })
+      .forEach(function (k) { if (!seen[k]) { seen[k] = 1; want.push(k); } });
+    (paletteNames || []).forEach(function (k) { if (!seen[k]) { seen[k] = 1; want.push(k); } });
+    while (want.length < cols) want.push(want[want.length - 1] || 'yellow');
+    return want.slice(0, cols);
+  }
+
+  /* Make a board legal again without redrawing it.
+   *
+   * Resizing is the case that needs this: dropping a column throws cars away and
+   * adding one invents them, and either way the colour counts stop being whole
+   * columns, so the level reads "invalid" with no obvious cause. Here the exact
+   * bag of cars a legal board needs is built first — rows cars per column colour
+   * plus the one odd car — and then the existing grid is walked cell by cell,
+   * keeping every colour the bag can still afford. So a legal board comes back
+   * unchanged and an illegal one only loses the cells it could not pay for. */
+  function legalize(level, paletteNames) {
+    var cols = level.cols, rows = level.rows;
+    var want = columnColors(level, paletteNames);
+    var bag = {};
+    want.forEach(function (k) { bag[k] = (bag[k] || 0) + rows; });
+    bag[REV] = (bag[REV] || 0) + 1;                  /* the car that ends on the pad */
+
+    var grid = [], holes = [];
+    for (var c = 0; c < cols; c++) {
+      grid[c] = [];
+      for (var r = 0; r < rows; r++) {
+        var cell = (level.grid[c] || [])[r];
+        var spec = cell == null ? '' : String(cell);
+        var hid = spec.charAt(0) === '?';
+        var col = hid ? spec.slice(1) : spec;
+        if (col && bag[col] > 0) { bag[col]--; grid[c][r] = (hid ? '?' : '') + col; }
+        else { grid[c][r] = null; holes.push([c, r]); }
+      }
+    }
+
+    /* REV last: a cell can hold it, but leaving it for the pad is the tidier
+     * board and the one every hand-built level in this repo uses. */
+    var pool = [];
+    Object.keys(bag).forEach(function (k) {
+      if (k === REV) return;
+      for (var i = 0; i < bag[k]; i++) pool.push(k);
+    });
+    for (var h = 0; h < holes.length; h++) {
+      var at = holes[h];
+      grid[at[0]][at[1]] = pool.length ? pool.shift() : REV;
+      if (!pool.length && bag[REV] > 0 && grid[at[0]][at[1]] === REV) bag[REV]--;
+    }
+
+    var pad = pool.length ? pool.shift() : (bag[REV] > 0 ? REV : 'yellow');
+    level.grid = grid;
+    level.pad = pad;
+    return level;
+  }
+
   /* Set the move budget from the actual optimum instead of a round number. */
   function autoBudget(level, slack, nodeCap) {
     var sol = S.solve(E.createState(level), { nodeCap: nodeCap || 200000 });
@@ -179,6 +251,7 @@
 
   global.Gen = {
     generate: generate, autoBudget: autoBudget, search: search,
-    biggestRun: biggestRun, capMatches: capMatches
+    biggestRun: biggestRun, capMatches: capMatches,
+    columnColors: columnColors, legalize: legalize
   };
 })(typeof self !== 'undefined' ? self : this);
