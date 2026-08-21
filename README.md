@@ -14,7 +14,9 @@ Góc trái trên có badge **build hh:mm dd-mm** = thời điểm `src/tool.js` 
 
 **Mở ra là chế độ Test — chỉ có 3 tab.** Bấm **⚙ Level Design** góc phải trên mới ra Tune (4 template độ khó + gợi ý khó/dễ), Edit (vẽ lưới), Feel (animation + kiểu dáng xe).
 
-Lần đầu mở tool có popup **Bắt đầu ở đâu** — 4 bộ cấp độ, 3 chế độ mỗi cái một dòng, hết. Bấm **Tôi đã hiểu rồi** để không hiện lại; mở lại bằng nút **Hướng dẫn**.
+Mở ra là **bộ 40 level** (`src/set40.js`) — xe ẩn từ level 9, cột màu từ 21, cột khoá từ 31. Bốn bộ ngắn 10 level cũ vẫn ở cạnh để so curve.
+
+Lần đầu mở tool có popup **Bắt đầu ở đâu** — các bộ cấp độ, 3 chế độ mỗi cái một dòng, hết. Bấm **Tôi đã hiểu rồi** để không hiện lại; mở lại bằng nút **Hướng dẫn**.
 
 Tool không dùng `alert`/`confirm` của trình duyệt — mọi hộp thoại là modal trong tool.
 
@@ -26,7 +28,10 @@ Tool không dùng `alert`/`confirm` của trình duyệt — mọi hộp thoại
 - Cột toàn 1 màu = hoàn thành, **khoá lại**, không tap được nữa. Win khi mọi cột hoàn thành.
 - **Xe ngược chiều (`REV`)**: không màu. Cột chứa nó không bao giờ hoàn thành, và nó không bắt buộc phải đặt — nó chính là xe lẻ kết thúc trên pad.
 - **Xe ẩn (`?`)**: lộ màu ngay khi di chuyển, tức lần đầu cột đó bị tap.
+- **Cột khoá (locked column)**: cột bị niêm, phải clear đủ `need` cột khác mới mở. Đang niêm thì không tap được — xe không vào, không ra — nhưng xe trong đó vẫn tính vào tổng màu. Gate hiện `🔒 <còn thiếu bao nhiêu cột>`.
+- **Cột màu (coloured column)**: cột chỉ tính hoàn thành khi toàn bộ đúng **một màu chỉ định**. Fill đúng một màu khác thì không ăn gì, và auto-sort không chạm vào cột đó trừ khi xe trên pad đúng màu nó đòi. Gate hiện chấm màu, cột viền màu đó.
 - **Auto-sort**: sau mỗi move, cột nào chỉ còn thiếu 1 xe đúng màu với xe trên pad thì xe lạ duy nhất của nó được dời xuống đáy — tap cột đó vừa hoàn thành cột vừa văng xe lạ ra.
+- Không còn nước tap nào mà chưa win = **thua** (không phải treo). Đây là cách level khoá sai cấu hình lộ ra ngay.
 
 ## Kiến trúc
 
@@ -35,6 +40,7 @@ Tool không dùng `alert`/`confirm` của trình duyệt — mọi hộp thoại
 | `src/engine.js` | Luật thuần. Không DOM, không timer, không random. Tool và solver dùng chung. |
 | `src/solver.js` | IDA* tìm `minMoves`, greedy upper bound, playout đo win rate, phân loại quyết định. |
 | `src/gen.js` | Sinh level. Bắt đầu từ bàn đã giải rồi chỉ đổi chỗ 2 xe, nên luôn hợp lệ. |
+| `src/gameconfig.js` | Đổi qua/lại giữa level của tool và **file JSON client** (`ConfigVersion: 1`). |
 | `src/playtest.js` | Chạy hàng vạn ván với budget vô hạn, dựng đường cong budget → win rate. |
 | `src/playtest-worker.js` | Chạy playtest ngoài main thread. |
 | `src/tuner.js` | Đòn bẩy độ khó + gợi ý có đo đạc. |
@@ -165,7 +171,18 @@ Câu ghép đi qua `I18N.m('key', a, b)` với template `{0}` (152 template). **
 
 Một cái bẫy gặp thật khi làm: alias `t` và `L` va với tên biến sẵn có trong `tool.js` (`t` là một bậc, `L` là một level), nên trong callback chúng bị shadow và nổ `t is not a function`. Alias đổi thành `tr` và `loc`.
 
-## Bốn bộ cấp độ
+## Bộ 40 level
+
+`src/set40.js` — sinh bằng `tools/make_40.js` rồi đóng gói bằng `tools/pack_40.js`, **không sửa tay**:
+
+```bash
+node tools/make_40.js --out configLevel_gen40 --tries 10
+node tools/pack_40.js
+```
+
+Bảng số đo từng level + lịch dạy cơ chế: `configLevel_gen40/README.md`. Budget của mỗi level **fit theo band win-rate của bậc bằng bisection**, không nhân slack cố định — thang 10 bậc đo khi chưa có cột khoá/cột màu nên nhân hằng số ra sai (thử lần đầu: level 21 rơi xuống 19% win).
+
+## Bốn bộ cấp độ ngắn
 
 Chọn bằng nhóm nút cùng hàng với 3 chế độ: `Gốc` · `Dễ` · `Trung bình` · `Khó`, mỗi nút kèm dải bậc `1→4` / `1→7` / `2→10` và tô màu theo độ khó. **Đổi bộ là về level 1** — mỗi bộ là một curve khác, giữ số level cũ sẽ rơi vào giữa ramp của bộ mới.
 
@@ -315,10 +332,72 @@ Nút **Ẩn puzzle** thu khung bàn lại để bảng số và chart dùng hế
 
 Thuần hiển thị, không chạm engine: state, move count, cột đã khoá đều giữ nguyên, và tap cột trong lúc ẩn vẫn tính nước bình thường. Hình học bàn tính từ kích thước thật của khung nên khi ẩn mọi lệnh vẽ bị hoãn lại, hiện lên thì vẽ lại đúng.
 
+## Cột khoá & cột màu
+
+Tab **Edit** → khối **Luật cột**: mỗi cột một ô, gồm
+
+- ô số `🔒` = cần clear bao nhiêu cột trước khi cột này mở. `0` = không khoá.
+- ô chọn màu = cột chỉ nhận đúng màu đó. `— không` = cột thường.
+
+Hai luật này nằm trên **level** (`lockedCols`, `coloredCols`), không nằm trên state, nên restart / undo / export đều giữ. Solver, playtest và mọi con số độ khó đi qua `engine.js` nên tự động tính đúng luật mới — không phải sửa gì thêm.
+
+`engine.validate` chặn 3 kiểu cấu hình chết:
+
+- Thứ tự mở bất khả: sắp các `need` tăng dần, cái thứ `i` nhiều nhất chỉ có `(số cột không khoá) + i` cột clear được trước nó.
+- Khoá hết mọi cột → không có nước đi đầu tiên.
+- Cột đòi màu mà bàn không đủ xe màu đó (`số cột đòi × rows`).
+
+**Thang 10 bậc chưa đo lại cho hai cơ chế này.** Template độ khó vẫn là thang cũ; đặt luật cột xong thì đo bằng **Đo level này** / **Playtest** rồi tự đọc số, đừng tin bậc cũ.
+
+## Game JSON (ConfigVersion 1)
+
+Trên **header** có sẵn 2 nút, mở ở chế độ nào cũng bấm được:
+
+- **⬇ JSON** — tải level đang mở thành `level_N.json`.
+- **⬇ JSON cả bộ** — tải từng level của bộ thành một file. Chrome sẽ hỏi cho phép tải nhiều file; mỗi file cách nhau 350ms vì browser bỏ qua download bấm dồn cùng lúc.
+
+Muốn xem/sửa tham số trước khi xuất thì vào tab **Level Set** → khối **Game JSON**. File client **không chứa bàn** — nó là *đơn xin sinh bàn*: bàn `NumQueue × (NumPerRow + ExtraColumnsCount)`, mỗi cột một kind, client sinh lại tới khi lời giải rơi vào `[MinMove, MaxMove]`, tối đa `MaxAttempts` lần.
+
+| Field | Tool |
+|---|---|
+| `NumQueue` | `rows` |
+| `NumPerRow` | `cols - ExtraColumnsCount` |
+| `ExtraColumnsCount` | `level.extraColumns` — cột trống client thêm cho player có chỗ xoay xe. Tool **chưa mô phỏng ô trống**, nên số này chỉ ghi kèm, không đo. |
+| `KindList` | mỗi màu trên bàn một kind, theo thứ tự cột. Bảng màu→kind cố định trong `src/gameconfig.js` (`yellow: a1`, `magenta: a2`, …) để cùng một màu là cùng một xe ở mọi level. |
+| `MinMove` | lời giải solver (`~` = greedy upper bound khi IDA* hết node) |
+| `MaxMove` | budget của level |
+| `MaxColorMatch` | run cùng màu dài nhất trong 1 cột lúc bắt đầu — **đo từ bàn**, không phải chọn tay |
+| `ColoredColumnsLocation` | `coloredCols`, đánh số từ 1 |
+| `LockedColumns` | `lockedCols` → `{Column, Counter}`, đánh số từ 1 |
+| `NumHiddenCar` | số xe ẩn, tính cả xe trên pad |
+| `LockedShuffleRatio` | ghi đúng literal `0.15000000596046449` (float32 0.15) để re-export diff sạch |
+
+Bật **Ghi cứng bàn (Map)** nếu muốn ship đúng bàn đang chỉnh: thêm `Map`, `CarShape`, `HiddenColorCar`, `DummyType`, `DummyShape` (row-major, kind dạng chuỗi, xe ngược chiều là `rev`).
+
+**Nhập config** chạy được cả hai chiều: file có `Map` thì dựng lại đúng bàn; file chỉ có tham số thì tool tự sinh (tối đa 20 lần, mỗi lần giải một lượt) cho tới khi lời giải vào band.
+
+Đo thử 5 file trong `configLevel_1_to_40/`: level 11 và 36 vào band, level 21/31/40 ra thấp hơn band khá nhiều (level 40: 60 move so với band 95–110). Lý do là bàn client có **cột/ô trống** mà tool đang fill kín, nên cùng số xe mà puzzle client sâu hơn. Tool báo rõ level nào lệch chứ không im lặng — đừng coi `MinMove` tool đo là bằng con số client sinh ra khi `ExtraColumnsCount > 0`.
+
+Xuất cả bộ thành từng file `level_N.json` bằng node:
+
+```bash
+node tools/export_configs.js --set hard --out configLevel_1_to_40
+```
+
+`--hard` để ghi cứng bàn, `--attempts N`, `--steps N`, `--nodecap N`. Chạy solver cho từng level nên bộ 6×6 sẽ lâu.
+
+## Test
+
+```bash
+node tests/run.js
+```
+
+Không dependency, không framework — `tests/harness.js` là 30 dòng. Bao luật cột khoá / cột màu, validate, generator, và round-trip game JSON.
+
 ## Git
 
 `main` giữ bản trước khi có tuner/playtest/asset. Muốn quay lại: `git checkout main`.
 
 ## Export
 
-Tab **Level Set** → `Xuất JSON set` / `Download .json`. File gồm `palette`, `feel`, và mảng `levels`; level nào đã analyze thì có kèm `metrics`.
+Tab **Level Set** → `Xuất JSON set` / `Download .json`. File gồm `palette`, `feel`, và mảng `levels`; level nào đã analyze thì có kèm `metrics`. Đây là format **của tool** — muốn file cho client thì xem `Game JSON (ConfigVersion 1)` bên dưới.

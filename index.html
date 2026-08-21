@@ -46,6 +46,9 @@
       </div>
       <div class="hdr-right">
         <span class="badge" id="statusBadge">playing</span>
+        <button id="gcQuickOne" data-i18n="gcQuickOne" data-i18n-title="gcQuickOneT"></button>
+        <button id="gcQuickAll" data-i18n="gcQuickAll" data-i18n-title="gcQuickAllT"></button>
+        <span class="sep"></span>
         <button id="helpGuide" data-i18n-title="guideT" data-i18n="guide">Hướng dẫn</button>
         <button id="langToggle" data-i18n="langLabel" data-i18n-title="langTitle"></button>
         <span class="badge" id="buildStamp" data-i18n-title="buildT">build …</span>
@@ -187,6 +190,8 @@
           </div>
           <h3><span data-i18n="gridWord"></span> <span class="hint" style="margin:0" data-i18n="gridNote"></span></h3>
           <div id="editGrid"></div>
+          <h3><span data-i18n="colRules"></span> <span class="hint" style="margin:0" data-i18n="colRulesNote"></span></h3>
+          <div id="colRules"></div>
           <div class="row"><label data-i18n="padCar"></label><div id="padCell"></div></div>
           <h3 data-i18n="carCount"></h3>
           <div class="countList" id="counts"></div>
@@ -270,6 +275,26 @@
               <button id="importBtn" data-i18n="importJson"></button>
             </div>
             <textarea id="exportJson" rows="14" spellcheck="false"></textarea>
+            <h3 data-i18n="gcHead"></h3>
+            <div class="row">
+              <label data-i18n="gcExtraLabel"></label>
+              <input type="number" id="gcExtra" min="0" max="8" value="0" style="width:56px">
+              <label style="min-width:0" data-i18n="gcAttempts"></label>
+              <input type="number" id="gcAttempts" value="1000" step="100" min="1" style="width:82px">
+              <label style="min-width:0" data-i18n="gcSteps"></label>
+              <input type="number" id="gcSteps" value="0" min="0" style="width:56px">
+              <label style="min-width:0"><input type="checkbox" id="gcHard"> <span data-i18n="gcHardLabel"></span></label>
+            </div>
+            <div class="row">
+              <button class="primary" id="gcOne" data-i18n="gcOne"></button>
+              <button id="gcAll" data-i18n="gcAll"></button>
+              <button id="gcDown" data-i18n="gcDown"></button>
+              <button id="gcDownAll" data-i18n="gcDownAll"></button>
+              <button id="gcImport" data-i18n="gcImport"></button>
+              <span class="hint" id="gcNote" style="margin:0"></span>
+            </div>
+            <div class="hint" data-i18n-html="gcHelp"></div>
+            <textarea id="gcJson" rows="14" spellcheck="false"></textarea>
           </div>
         </div>
 
@@ -285,8 +310,8 @@
    the load order, which plain dynamic injection would not. */
 (function () {
   var t = Date.now();
-  [ 'i18n', 'help', 'modal', 'sprites', 'engine', 'levels', 'sets', 'solver', 'gen', 'playtest',
-    'tuner', 'difficulty', 'feel', 'render', 'tool'
+  [ 'i18n', 'help', 'modal', 'sprites', 'engine', 'levels', 'sets', 'set40', 'solver', 'gen',
+    'gameconfig', 'playtest', 'tuner', 'difficulty', 'feel', 'render', 'tool'
   ].forEach(function (m) {
     document.write('<script src="src/' + m + '.js?t=' + t + '"><\/script>');
   });

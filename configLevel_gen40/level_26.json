@@ -1,0 +1,28 @@
+{
+    "ConfigVersion": 1,
+    "MapLevel": 26,
+    "Seed": 0,
+    "NumQueue": 5,
+    "NumPerRow": 6,
+    "ExtraColumnsCount": 0,
+    "ColorList": [],
+    "KindList": [
+        "b3",
+        "a6",
+        "a7",
+        "a5",
+        "b1",
+        "b2"
+    ],
+    "MinMove": 26,
+    "MaxMove": 36,
+    "MaxColorMatch": 3,
+    "ColoredColumnsLocation": [
+        2
+    ],
+    "LockedColumns": [],
+    "NumHiddenCar": 2,
+    "LockedShuffleRatio": 0.15000000596046449,
+    "LockedShuffleSteps": 0,
+    "MaxAttempts": 1000
+}

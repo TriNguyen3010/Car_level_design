@@ -5,6 +5,7 @@
 
   var E = global.Engine, S = global.Solver, G = global.Gen, F = global.Feel;
   var PT = global.Playtest, T = global.Tuner, DF = global.Difficulty;
+  var GC = global.GameConfig;
   /* Aliases deliberately NOT named t or L: both are long-standing local names in
    this file (a tier, a level) and would be shadowed inside callbacks. */
   var I = global.I18N, tr = I.t, loc = I.L;
@@ -17,7 +18,9 @@
   var lockedTier = {};    // level index -> tier the designer signed off
   var SETS = global.LevelSets ? JSON.parse(JSON.stringify(global.LevelSets.SETS)) : null;
   var SET_ORDER = global.LevelSets ? global.LevelSets.order.slice() : [];
-  var currentSet = SETS ? 'default' : null;
+  /* The 40-level run is the shipped campaign; the four short sets stay one
+   * click away for comparing curves. */
+  var currentSet = SETS ? (SETS.gen40 ? 'gen40' : 'default') : null;
   var levels = SETS ? SETS[currentSet].levels : JSON.parse(JSON.stringify(global.LevelData.levels));
   var idx = 0;
 
@@ -29,7 +32,8 @@
    * under each label says how hard in the tool's own vocabulary. */
   function setWord(k) {
     return tr({ 'default': 'setPickWordDefault', easy: 'setPickWordEasy',
-                medium: 'setPickWordMedium', hard: 'setPickWordHard' }[k] || k);
+                medium: 'setPickWordMedium', hard: 'setPickWordHard',
+                gen40: 'setPickWordGen40' }[k] || k);
   }
   var SET_WORD = new Proxy({}, { get: function (_, k) { return setWord(String(k)); } });
 
@@ -186,6 +190,11 @@
   function tapColumn(c) {
     if (busy || !state || state.status !== 'playing') return;
     if (state.locked[c]) { renderer.flashColumn(c, 'bad'); F.Sfx.invalid(); return; }
+    if (state.sealed[c]) {
+      renderer.flashColumn(c, 'bad'); F.Sfx.invalid();
+      note(I.m('xSealedTap', Math.max(0, state.need[c] - state.done)));
+      return;
+    }
     history.push(E.cloneState(state));
     if (history.length > 200) history.shift();
     var ev = E.applyMove(state, c);
@@ -620,7 +629,7 @@
       el('td', null, tr, L.cols + '×' + L.rows);
       el('td', null, tr, String(L.moves));
       var declared = tierOf[i] || L.tier;
-      el('td', null, tr, declared ? String(declared) + (tierOf[i] ? '' : ' ' + tr('fromSet')) : '—');
+      el('td', null, tr, declared ? String(declared) + (tierOf[i] ? '' : ' ' + I.t('fromSet')) : '—');
       var td = el('td', null, tr);
       var pill = el('span', 'tierPill' + (lockedTier[i] ? ' set' : ''), td, lockedTier[i] ? String(lockedTier[i]) : '—');
       el('td', null, tr, String(attempts.filter(function (a) { return a.at === i; }).length));
@@ -689,7 +698,7 @@
    * Charts first. A campaign is a shape, and a shape is something you look at;
    * ten rows of numbers make the reader rebuild the shape in their head. */
 
-  var SET_COLOR = { 'default': '#8a93a3', easy: '#4ec97a', medium: '#e8b13a', hard: '#e05c4c' };
+  var SET_COLOR = { 'default': '#8a93a3', easy: '#4ec97a', medium: '#e8b13a', hard: '#e05c4c', gen40: '#5ecfe0' };
   var measuredSet = {};        // set key -> [{winCareful, winAvg, winSloppy}]
 
   function tiersOf(key) {
@@ -869,7 +878,7 @@
       el('div', 'feel', txt, tpl ? loc(tpl.feel) : tr('noTierRow'));
       var meta = el('div', 'meta', txt);
       meta.innerHTML = L.cols + '×' + L.rows + ' · ' + tr('budget') + ' ' + L.moves +
-        (tpl ? ' · ' + tr('group') + ' ' + I.loc(tpl.group) : '') +
+        (tpl ? ' · ' + tr('group') + ' ' + loc(tpl.group) : '') +
         (isB ? ' · <span class="bt">' + tr('breatherTag') + '</span>' : '');
 
       var barBox = el('div', null, row);
@@ -1756,9 +1765,9 @@
       el('td', null, tr, pct(p.ceiling));
       el('td', null, tr, String(p.p[0.5] == null ? '—' : p.p[0.5]));
       el('td', null, tr, String(p.p[0.9] == null ? '—' : p.p[0.9]));
-      el('td', null, tr, String(p.budgetFor[90] == null ? tr('unreachable') : p.budgetFor[90]));
-      el('td', null, tr, String(p.budgetFor[75] == null ? tr('unreachable') : p.budgetFor[75]));
-      el('td', null, tr, String(p.budgetFor[60] == null ? tr('unreachable') : p.budgetFor[60]));
+      el('td', null, tr, String(p.budgetFor[90] == null ? I.t('unreachable') : p.budgetFor[90]));
+      el('td', null, tr, String(p.budgetFor[75] == null ? I.t('unreachable') : p.budgetFor[75]));
+      el('td', null, tr, String(p.budgetFor[60] == null ? I.t('unreachable') : p.budgetFor[60]));
     });
 
     renderPtCurve(rep);
@@ -1897,7 +1906,66 @@
     }
     var pad = clear($('padCell'));
     pad.appendChild(cellNode(L.pad, paintPad, togglePadHidden));
+    renderColRules();
+    $('gcExtra').value = L.extraColumns || 0;
     renderCounts();
+  }
+
+  function specFor(list, c) {
+    for (var i = 0; i < (list || []).length; i++) if (list[i].col === c) return list[i];
+    return null;
+  }
+
+  function writeSpec(key, c, value, make) {
+    var L = level();
+    var list = (L[key] || []).filter(function (x) { return x.col !== c; });
+    if (value) list.push(make());
+    list.sort(function (a, b) { return a.col - b.col; });
+    if (list.length) L[key] = list; else delete L[key];
+    afterEdit();
+  }
+
+  function setNeed(c, need) {
+    writeSpec('lockedCols', c, need > 0, function () { return { col: c, need: need }; });
+  }
+
+  function setWant(c, color) {
+    writeSpec('coloredCols', c, !!color, function () { return { col: c, color: color }; });
+  }
+
+  /* One block per column: how many columns must clear before it opens, and the
+   * one colour it accepts. Both live on the level, not on the state, so they
+   * survive restart and export. */
+  function renderColRules() {
+    var L = level(), g = el('div', 'colRules', clear($('colRules')));
+    g.style.gridTemplateColumns = 'repeat(' + L.cols + ', minmax(58px, 1fr))';
+    for (var c = 0; c < L.cols; c++) {
+      (function (col) {
+        var cell = el('div', 'colRule', g);
+        el('div', 'colRuleHead', cell, String(col + 1));
+        var lk = document.createElement('input');
+        lk.type = 'number'; lk.min = '0'; lk.max = String(Math.max(0, L.cols - 1));
+        var ls = specFor(L.lockedCols, col);
+        lk.value = ls ? ls.need : 0;
+        lk.title = '🔒';
+        lk.addEventListener('change', function () { setNeed(col, Math.max(0, lk.value | 0)); });
+        cell.appendChild(lk);
+        var sel = document.createElement('select');
+        var none = document.createElement('option');
+        none.value = ''; none.textContent = tr('colNone');
+        sel.appendChild(none);
+        Object.keys(PALETTE).forEach(function (name) {
+          var o = document.createElement('option');
+          o.value = name; o.textContent = name;
+          sel.appendChild(o);
+        });
+        var cs = specFor(L.coloredCols, col);
+        sel.value = cs ? cs.color : '';
+        if (cs) { sel.style.background = colorHex(cs.color); sel.style.color = '#10141c'; }
+        sel.addEventListener('change', function () { setWant(col, sel.value); });
+        cell.appendChild(sel);
+      })(c);
+    }
   }
 
   function paint(c, r) {
@@ -1964,6 +2032,11 @@
       }
     }
     L.cols = cols; L.rows = rows; L.grid = grid;
+    ['lockedCols', 'coloredCols'].forEach(function (k) {
+      if (!L[k]) return;
+      L[k] = L[k].filter(function (x) { return x.col < cols; });
+      if (!L[k].length) delete L[k];
+    });
     afterEdit();
   }
 
@@ -1975,12 +2048,16 @@
       strays: +$('genStrays').value || 0,
       hidden: +$('genHidden').value || 0,
       revInGrid: $('genRevInGrid').checked,
-      seed: +$('genSeed').value || 1
+      seed: +$('genSeed').value || 1,
+      lockedCols: L.lockedCols || [],
+      coloredCols: L.coloredCols || []
     });
     var ab = G.autoBudget(lv, +$('slackTarget').value || 1.6, 200000);
     var next = JSON.parse(JSON.stringify(L));
     next.grid = lv.grid; next.pad = lv.pad;
     next.moves = ab ? ab.budget : L.moves;
+    if (lv.lockedCols) next.lockedCols = lv.lockedCols;
+    if (lv.coloredCols) next.coloredCols = lv.coloredCols;
     applyLevelChange(next, 'generate ' + L.cols + '×' + L.rows);
     note(ab ? I.m('logGen', ab.minMoves + (ab.exact ? '' : '~'), ab.budget) : I.m('logGenNoMin'));
   }
@@ -2035,7 +2112,8 @@
   function renderSetTable() {
     var t = clear($('setTable'));
     var head = el('thead', null, t), hr = el('tr', null, head);
-    ['lv', tr('colSize'), tr('colorCount'), tr('hiddenWord'), tr('budget'), 'min', 'slack', 'forced', 'choice', 'dump', 'naiveWin'].forEach(function (h) {
+    ['lv', tr('colSize'), tr('colorCount'), tr('hiddenWord'), tr('colRules'), tr('budget'),
+     'min', 'slack', 'forced', 'choice', 'dump', 'naiveWin'].forEach(function (h) {
       el('th', null, hr, h);
     });
     var body = el('tbody', null, t);
@@ -2047,8 +2125,13 @@
       el('td', null, tr, L.cols + '×' + L.rows);
       el('td', null, tr, String(Object.keys(v.counts || {}).filter(function (k) { return k !== REV; }).length));
       el('td', null, tr, String(v.hidden || 0));
+      var marks = (L.lockedCols || []).map(function (x) { return '🔒' + (x.col + 1) + '·' + x.need; })
+        .concat((L.coloredCols || []).map(function (x) { return '🎨' + (x.col + 1); })).join(' ');
+      el('td', null, tr, marks || '—');
       el('td', null, tr, String(L.moves));
-      if (!a) { var td = el('td', null, tr, '—'); td.colSpan = 5; return; }
+      /* six metric columns, not five — an unanalysed row used to leave the last
+       * header without a cell under it */
+      if (!a) { var td = el('td', null, tr, '—'); td.colSpan = 6; return; }
       el('td', null, tr, String(a.minMoves) + (a.exact ? '' : '~'));
       el('td', slackClass(a.slack) ? 'f-' + slackClass(a.slack) : '', tr, a.slack ? a.slack.toFixed(1) + 'x' : '—');
       el('td', null, tr, pct(a.forcedRatio));
@@ -2216,6 +2299,122 @@
     renderSetTable();
   }
 
+  /* ---------------- game config (ConfigVersion 1) ---------------- */
+
+  function minMoveFor(i) {
+    var a = analysisCache[i];
+    if (a && a.minMoves != null) return a.minMoves;
+    var L = levels[i];
+    if (!E.validate(L).ok) return null;
+    var sol = S.solve(E.createState(L), { nodeCap: 200000 });
+    if (sol.solved) return sol.minMoves;
+    var g = S.greedySolve(E.createState(L), false);
+    return g.won ? g.moves.length : null;
+  }
+
+  function gcOpts(i) {
+    var L = levels[i];
+    return {
+      level: L.id != null ? L.id : i + 1,
+      minMove: minMoveFor(i),
+      hardConfig: $('gcHard').checked,
+      maxAttempts: +$('gcAttempts').value || 1000,
+      lockedShuffleSteps: +$('gcSteps').value || 0
+    };
+  }
+
+  function gcNote(msg) { $('gcNote').textContent = msg || ''; }
+
+  function exportGameOne() {
+    $('gcJson').value = GC.stringify(GC.toConfig(level(), gcOpts(idx)));
+    gcNote(GC.fileName(GC.toConfig(level(), { level: gcOpts(idx).level, minMove: 0 })));
+    return $('gcJson').value;
+  }
+
+  function exportGameAll() {
+    gcNote(tr('gcSolving'));
+    var out = levels.map(function (L, i) { return GC.toConfig(L, gcOpts(i)); });
+    $('gcJson').value = '[\n' + out.map(GC.stringify).join(',\n') + '\n]';
+    gcNote(I.m('xGcExported', out.length));
+    return out;
+  }
+
+  function saveFile(name, text) {
+    var blob = new Blob([text], { type: 'application/json' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = name;
+    a.click();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+  }
+
+  function downloadGameOne() {
+    var cfg = GC.toConfig(level(), gcOpts(idx));
+    saveFile(GC.fileName(cfg), GC.stringify(cfg));
+    gcNote(GC.fileName(cfg));
+    note(I.m('xGcSaved', GC.fileName(cfg)));
+  }
+
+  /* One file per level, the way configLevel_1_to_40/ is laid out. Browsers drop
+   * downloads fired in the same tick, so they go out one at a time. */
+  function downloadGameAll() {
+    var i = 0;
+    gcNote(tr('gcSolving'));
+    note(I.m('xGcSaving', 0, levels.length));
+    (function step() {
+      if (i >= levels.length) { gcNote(I.m('xGcExported', levels.length)); return; }
+      var cfg = GC.toConfig(levels[i], gcOpts(i));
+      saveFile(GC.fileName(cfg), GC.stringify(cfg));
+      i++;
+      gcNote(I.m('xGcSaving', i, levels.length));
+      setTimeout(step, 350);
+    })();
+  }
+
+  function importGameConfig() {
+    var txt = $('gcJson').value.trim();
+    if (!txt) return;
+    var data;
+    try { data = JSON.parse(txt); } catch (e) { global.Modal.alert(tr('dJsonErr'), e.message); return; }
+    var list = (Array.isArray(data) ? data : [data]).filter(function (c) {
+      return c && (c.ConfigVersion != null || c.NumQueue != null);
+    });
+    if (!list.length) { global.Modal.alert(tr('dImportErr'), tr('gcNoConfig')); return; }
+    /* A params-only config is solved once per attempt, so this blocks for a
+     * while on a big board — paint the note before starting. */
+    gcNote(tr('gcSolving'));
+    setTimeout(function () { runImport(list); }, 20);
+  }
+
+  function runImport(list) {
+    var made = 0, warn = [];
+    list.forEach(function (cfg) {
+      var got = GC.fromConfig(cfg, { maxAttempts: 20, nodeCap: 120000 });
+      if (!got) { warn.push(I.m('xGcBandMiss', cfg.MapLevel, 20, '—', cfg.MinMove, cfg.MaxMove)); return; }
+      var L = got.level;
+      L.moves = cfg.MaxMove;
+      var at = cfg.MapLevel != null ? cfg.MapLevel - 1 : levels.length;
+      if (at >= 0 && at < levels.length) {
+        L.theme = levels[at].theme || 'city';
+        if (levels[at].tier) L.tier = levels[at].tier;
+        levels[at] = L;
+      } else {
+        L.theme = 'city';
+        levels.push(L);
+      }
+      made++;
+      if (!got.inBand) {
+        warn.push(I.m('xGcBandMiss', cfg.MapLevel, got.tries, got.minMove, cfg.MinMove, cfg.MaxMove));
+      }
+    });
+
+    analysisCache = {};
+    loadLevel(Math.min(idx, levels.length - 1));
+    renderSetTable();
+    gcNote(I.m('xGcImported', made));
+    if (warn.length) global.Modal.alert(tr('gcHead'), warn.join('<br>'));
+  }
+
   /* ---------------- wiring ---------------- */
 
   $('prevLv').addEventListener('click', function () { loadLevel(idx - 1); renderSetTable(); });
@@ -2326,6 +2525,21 @@
   $('runAll').addEventListener('click', runAll);
   $('exportBtn').addEventListener('click', exportJSON);
   $('downloadBtn').addEventListener('click', download);
+  $('gcOne').addEventListener('click', exportGameOne);
+  $('gcAll').addEventListener('click', exportGameAll);
+  $('gcDown').addEventListener('click', downloadGameOne);
+  $('gcDownAll').addEventListener('click', downloadGameAll);
+  $('gcImport').addEventListener('click', importGameConfig);
+  /* Same two exports in the header, so testing a level and shipping it are one
+   * click apart in every mode — the panel versions live at the bottom of a tab
+   * only Level Design shows. */
+  $('gcQuickOne').addEventListener('click', downloadGameOne);
+  $('gcQuickAll').addEventListener('click', downloadGameAll);
+  $('gcExtra').addEventListener('change', function () {
+    var v = Math.max(0, Math.min(level().cols - 1, this.value | 0));
+    this.value = v;
+    if (v) level().extraColumns = v; else delete level().extraColumns;
+  });
   $('importBtn').addEventListener('click', importJSON);
   $('addLevel').addEventListener('click', function () {
     var L = level();

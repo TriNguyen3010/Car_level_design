@@ -214,6 +214,8 @@
         var gate = el('div', 'gate', this.gateRow);
         el('div', 'gate-arrow', gate);
         el('div', 'gate-check', gate);
+        el('div', 'gate-lock', gate);
+        el('div', 'gate-want', gate);
         this.gates.push(gate);
         var hit = el('div', 'hit', this.hitLayer);
         hit.dataset.col = c;
@@ -226,9 +228,23 @@
     for (var i = 0; i < state.cols; i++) {
       this.gates[i].style.width = g.cell + 'px';
       this.gates[i].classList.toggle('done', state.locked[i]);
+
+      /* A sealed column shows what it is waiting for, a coloured one shows the
+       * colour it accepts — both are rules the player cannot guess from the cars. */
+      var sealed = !!(state.sealed && state.sealed[i]);
+      var want = state.want ? state.want[i] : null;
+      this.gates[i].classList.toggle('sealed', sealed);
+      var lock = this.gates[i].querySelector('.gate-lock');
+      lock.textContent = sealed ? '🔒 ' + Math.max(0, state.need[i] - state.done) : '';
+      var chip = this.gates[i].querySelector('.gate-want');
+      chip.style.display = want ? '' : 'none';
+      if (want) chip.style.background = this.palette[want] || want;
+
       this.hits[i].style.cssText = 'left:' + (g.innerX + i * g.cell) + 'px;top:' + g.innerY +
         'px;width:' + g.cell + 'px;height:' + (g.cell * state.rows + g.gateH) + 'px';
-      this.hits[i].classList.toggle('locked', state.locked[i]);
+      this.hits[i].classList.toggle('locked', state.locked[i] || sealed);
+      this.hits[i].classList.toggle('wants', !!want);
+      if (want) this.hits[i].style.setProperty('--want', this.palette[want] || want);
     }
     this.lotInner.style.setProperty('--cols', state.cols);
     this.lotInner.style.setProperty('--cell', g.cell + 'px');

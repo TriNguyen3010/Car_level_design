@@ -17,13 +17,77 @@
     return out;
   }
 
-  /* opts: {cols, rows, colors:[names], strays, hidden, revInGrid, seed} */
+  /* Biggest same-colour run inside a column — the client's MaxColorMatch. */
+  function biggestRun(col) {
+    var counts = {}, best = 0;
+    for (var r = 0; r < col.length; r++) {
+      if (col[r] === REV) continue;
+      var k = String(col[r]).replace(/^\?/, '');
+      counts[k] = (counts[k] || 0) + 1;
+      if (counts[k] > best) best = counts[k];
+    }
+    return best;
+  }
+
+  /* Pull every column down to `cap` cars of one colour, still swapping only, so
+   * the colour totals survive. Best effort: a board can be too small for a low
+   * cap, and a guard beats an infinite loop. */
+  function capMatches(grid, cols, rows, cap, rnd) {
+    if (!(cap > 0) || cap >= rows) return;
+    var guard = 0;
+    while (guard++ < cols * rows * 20) {
+      var worst = -1, worstColor = null, worstN = cap;
+      for (var c = 0; c < cols; c++) {
+        var counts = {};
+        for (var r = 0; r < rows; r++) {
+          var k = String(grid[c][r]);
+          if (k === REV) continue;
+          counts[k] = (counts[k] || 0) + 1;
+          if (counts[k] > worstN) { worstN = counts[k]; worst = c; worstColor = k; }
+        }
+      }
+      if (worst < 0) return;
+      var moved = false;
+      for (var i = 0; i < cols * rows && !moved; i++) {
+        var oc = (rnd() * cols) | 0, or_ = (rnd() * rows) | 0;
+        if (oc === worst) continue;
+        var other = String(grid[oc][or_]);
+        if (other === worstColor || other === REV) continue;
+        if (biggestRun(grid[oc]) >= cap && other !== worstColor) {
+          /* taking a car out of a full column is fine, putting one in is not */
+          var after = grid[oc].filter(function (x, ix) { return ix !== or_; }).concat([worstColor]);
+          if (biggestRun(after) > cap) continue;
+        }
+        for (var r2 = 0; r2 < rows; r2++) {
+          if (String(grid[worst][r2]) !== worstColor) continue;
+          grid[worst][r2] = other;
+          grid[oc][or_] = worstColor;
+          moved = true;
+          break;
+        }
+      }
+      if (!moved) return;
+    }
+  }
+
+  /* opts: {cols, rows, colors:[names], strays, hidden, revInGrid, seed,
+   *        maxColorMatch, lockedCols:[{col,need}], coloredCols:[{col,color}]} */
   function generate(opts) {
     var cols = opts.cols, rows = opts.rows;
     var colors = opts.colors.slice(0, cols);          // at most one colour per column
     if (!colors.length) colors = ['yellow'];
     var rnd = S.mulberry32(opts.seed == null ? 1 : opts.seed);
     var assign = distributeColumns(cols, colors);
+
+    /* A coloured column asks for one colour, so that colour has to be the one
+     * that column is built from — trade it with whichever column owns it now. */
+    (opts.coloredCols || []).forEach(function (x) {
+      if (!x || !x.color || !(x.col >= 0 && x.col < cols)) return;
+      var at = assign.indexOf(x.color);
+      if (at === x.col) return;
+      if (at >= 0) { var t = assign[x.col]; assign[x.col] = assign[at]; assign[at] = t; }
+      else assign[x.col] = x.color;
+    });
 
     var grid = [];
     for (var c = 0; c < cols; c++) {
@@ -53,10 +117,20 @@
       swapped++;
     }
 
+    capMatches(grid, cols, rows, opts.maxColorMatch || 0, rnd);
+
     var level = {
       cols: cols, rows: rows, moves: 999,
       pad: pad, grid: grid
     };
+    if (opts.lockedCols && opts.lockedCols.length) {
+      level.lockedCols = opts.lockedCols.map(function (x) { return { col: x.col, need: x.need }; });
+    }
+    if (opts.coloredCols && opts.coloredCols.length) {
+      level.coloredCols = opts.coloredCols.map(function (x) {
+        return { col: x.col, color: x.color || assign[x.col] };
+      });
+    }
 
     var hide = Math.max(0, opts.hidden || 0), tries = 0;
     while (hide > 0 && tries++ < 500) {
@@ -103,5 +177,8 @@
     return best;
   }
 
-  global.Gen = { generate: generate, autoBudget: autoBudget, search: search };
+  global.Gen = {
+    generate: generate, autoBudget: autoBudget, search: search,
+    biggestRun: biggestRun, capMatches: capMatches
+  };
 })(typeof self !== 'undefined' ? self : this);

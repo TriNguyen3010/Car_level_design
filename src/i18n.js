@@ -43,6 +43,12 @@
     buildT:       { vi: 'thời điểm src/tool.js sửa lần cuối — dùng để biết browser đã nạp bản mới chưa',
                     en: 'last-modified time of src/tool.js — tells you whether the browser loaded the new build' },
     setPickT:     { vi: 'Đổi bộ là chơi lại từ level 1', en: 'Switching campaign restarts from level 1' },
+    gcQuickOne:   { vi: '⬇ JSON', en: '⬇ JSON' },
+    gcQuickOneT:  { vi: 'Tải level đang mở thành level_N.json — format client ConfigVersion 1',
+                    en: 'Download the level on screen as level_N.json — client format, ConfigVersion 1' },
+    gcQuickAll:   { vi: '⬇ JSON cả bộ', en: '⬇ JSON, whole set' },
+    gcQuickAllT:  { vi: 'Tải từng level của bộ thành một file, mỗi file cách nhau một nhịp vì browser chặn download dồn cùng lúc',
+                    en: 'Download every level in the campaign as its own file, one at a time — browsers drop downloads fired together' },
 
     /* tabs */
     tabCurve:     { vi: 'Độ khó', en: 'Difficulty' },
@@ -69,7 +75,7 @@
 
     /* difficulty tab */
     measureWholeSet: { vi: 'Đo cả bộ', en: 'Measure whole campaign' },
-    fourSets:     { vi: 'Bốn bộ cạnh nhau', en: 'All four campaigns' },
+    fourSets:     { vi: 'Các bộ cạnh nhau', en: 'All campaigns side by side' },
     activeSet:    { vi: 'Bộ đang chọn', en: 'Active campaign' },
     perLevel:     { vi: 'Từng level', en: 'Level by level' },
     setWord:      { vi: 'Bộ', en: 'Campaign' },
@@ -267,6 +273,29 @@
     downloadJson: { vi: 'Download .json', en: 'Download .json' },
     importJson:   { vi: 'Import từ textarea', en: 'Import from textarea' },
 
+    /* game config (ConfigVersion 1) */
+    gcHead:       { vi: 'Game JSON (ConfigVersion 1)', en: 'Game JSON (ConfigVersion 1)' },
+    gcExtraLabel: { vi: 'Cột trống thêm', en: 'Extra columns' },
+    gcHardLabel:  { vi: 'Ghi cứng bàn (Map)', en: 'Bake the board (Map)' },
+    gcAttempts:   { vi: 'MaxAttempts', en: 'MaxAttempts' },
+    gcSteps:      { vi: 'LockedShuffleSteps', en: 'LockedShuffleSteps' },
+    gcOne:        { vi: 'Xuất level này', en: 'Export this level' },
+    gcAll:        { vi: 'Xuất cả bộ', en: 'Export whole set' },
+    gcDown:       { vi: 'Download level_N.json', en: 'Download level_N.json' },
+    gcDownAll:    { vi: 'Download cả bộ', en: 'Download whole set' },
+    gcImport:     { vi: 'Nhập config trong textarea', en: 'Import config from textarea' },
+    gcHelp:       { vi: 'Config là <b>đơn xin sinh bàn</b> cho client: bàn <b>NumQueue × (NumPerRow + ExtraColumns)</b>, mỗi cột một kind, và client sinh lại tới khi lời giải rơi vào <b>[MinMove, MaxMove]</b>, tối đa MaxAttempts lần. Bật <b>ghi cứng bàn</b> nếu muốn ship đúng bàn đang chỉnh. <b>Cột trống thêm</b> là số cột client thêm để player có chỗ xoay xe — tool chưa mô phỏng ô trống nên chỉ ghi kèm, không đo.',
+                    en: 'The config is a <b>generation brief</b> for the client: a <b>NumQueue × (NumPerRow + ExtraColumns)</b> board, one kind per column, regenerated until the solution lands inside <b>[MinMove, MaxMove]</b>, up to MaxAttempts tries. Turn on <b>bake the board</b> to ship exactly the board on screen. <b>Extra columns</b> are free columns the client adds for elbow room — this tool does not simulate empty slots, so the number is carried through, not measured.' },
+    gcSolving:    { vi: 'Đang giải để lấy MinMove…', en: 'Solving for MinMove…' },
+    gcNoConfig:   { vi: 'Textarea không có config nào (cần ConfigVersion hoặc NumQueue)',
+                    en: 'No config in the textarea (needs ConfigVersion or NumQueue)' },
+
+    /* column rules */
+    colRules:     { vi: 'Luật cột', en: 'Column rules' },
+    colRulesNote: { vi: '🔒 = cần clear bao nhiêu cột mới mở · ô màu = cột chỉ nhận đúng màu đó',
+                    en: '🔒 = columns to clear before it opens · swatch = the only colour the column accepts' },
+    colNone:      { vi: '— không', en: '— none' },
+
     /* modals */
     ok:           { vi: 'OK', en: 'OK' },
     close:        { vi: 'Đóng', en: 'Close' },
@@ -301,6 +330,7 @@
     buildingBoards:{ vi: 'Đang sinh bàn đạt tiêu chí', en: 'Generating a board that meets the criteria' },
 
     /* remaining */
+    setPickWordGen40:   { vi: '40 level', en: '40 levels' },
     setPickWordDefault: { vi: 'Gốc', en: 'Original' },
     setPickWordEasy:    { vi: 'Dễ', en: 'Easy' },
     setPickWordMedium:  { vi: 'Trung bình', en: 'Medium' },
@@ -323,8 +353,8 @@
     runAllForCurve:{ vi: 'chạy Analyze cả set để thấy curve', en: 'run Analyze whole set to see the curve' },
     setCurveLegend:{ vi: 'cột xanh = minMoves (scale {0}) · xanh lá = choice · đỏ = naiveWin · vàng = slack (scale 4x). Curve tốt: xanh lá đi lên, đỏ đi xuống, vàng phẳng quanh 1.5–2x.',
                      en: 'blue bars = minMoves (scale {0}) · green = choice · red = naiveWin · amber = slack (scale 4x). A good curve: green rising, red falling, amber flat around 1.5–2x.' },
-    exportNote:   { vi: 'grid[col][row], row 0 = đỉnh cột. "REV" = xe ngược chiều. "?" = xe ẩn. sets = 4 bộ cấp độ, mỗi bộ 10 level riêng; đổi bộ thì chơi lại từ level 1.',
-                    en: 'grid[col][row], row 0 is the head of the column. "REV" = wrong-way car, "?" = hidden car. sets = four campaigns, ten levels each; switching campaign restarts at level 1.' },
+    exportNote:   { vi: 'grid[col][row], row 0 = đỉnh cột. "REV" = xe ngược chiều. "?" = xe ẩn. lockedCols = cột khoá {col, need}, coloredCols = cột màu {col, color}. sets = 40 level + 4 bộ ngắn 10 level; đổi bộ thì chơi lại từ level 1.',
+                    en: 'grid[col][row], row 0 is the head of the column. "REV" = wrong-way car, "?" = hidden car. lockedCols = locked columns {col, need}, coloredCols = coloured columns {col, color}. sets = the 40-level run plus four short 10-level campaigns; switching campaign restarts at level 1.' },
 
     tierShort:    { vi: 'bậc', en: 'step' },
     allNLevels:   { vi: 'cả {0} level', en: 'all {0} levels' },
@@ -339,6 +369,16 @@
    * word order differs between the two languages and gluing translated pieces
    * produces nonsense. */
   var M = {
+    /* game config + column rules */
+    xGcExported:  { vi: 'Đã xuất {0} level', en: 'Exported {0} levels' },
+    xGcImported:  { vi: 'Đã nhập {0} level', en: 'Imported {0} levels' },
+    xGcSaved:     { vi: 'Đã tải {0}', en: 'Saved {0}' },
+    xGcSaving:    { vi: 'Đang tải file {0}/{1}…', en: 'Saving file {0} of {1}…' },
+    xGcBandMiss:  { vi: 'Level {0}: sinh {1} lần, lời giải {2} move — ngoài band [{3}, {4}]',
+                    en: 'Level {0}: {1} tries, solution {2} moves — outside [{3}, {4}]' },
+    xSealedTap:   { vi: 'Cột còn khoá, cần clear thêm {0} cột', en: 'Still locked — clear {0} more columns' },
+    xColNeed:     { vi: 'cột {0}: mở sau khi clear {1} cột', en: 'column {0}: opens after {1} columns' },
+
     /* metric cards */
     mDiffNote:    { vi: '0 = ai cũng thắng, 100 = gần như thua', en: '0 = everyone wins, 100 = almost nobody does' },
     mDepthNote:   { vi: '% lượt có quyết định thật', en: '% of turns with a real decision' },
@@ -540,16 +580,16 @@
                     en: 'In <b>Play & tune</b> — play, then raise or lower the step at the board. Every run lands in the <b>Journal</b> tab.' },
     xModeDesign:  { vi: 'Đang ở <b>Level Design</b> — đủ 6 tab: Tune (thang 10 bậc + gợi ý), Edit (vẽ lưới), Feel (animation, kiểu dáng xe).',
                     en: 'In <b>Level Design</b> — all six tabs: Tune (the 10-step ladder plus suggestions), Edit (draw the grid), Feel (animation, car shapes).' },
-    xGuide:       { vi: '<b>4 bộ cấp độ</b> — góc trên trái: Gốc · Dễ · Trung bình · Khó. Cùng 10 level, ba curve khác nhau. Đổi bộ là chơi lại từ level 1.',
-                    en: '<b>Four campaigns</b> — top left: Original · Easy · Medium · Hard. Same ten levels, three different curves. Switching restarts from level 1.' },
+    xGuide:       { vi: '<b>Bộ 40 level</b> mở sẵn — xe ẩn từ level 9, cột màu từ 21, cột khoá từ 31. Cạnh nó là 4 bộ ngắn 10 level (Gốc · Dễ · Trung bình · Khó) để so curve. Đổi bộ là chơi lại từ level 1.',
+                    en: '<b>The 40-level run</b> opens first — hidden cars from level 9, coloured columns from 21, locked columns from 31. Beside it sit four short 10-level campaigns (Original · Easy · Medium · Hard) for comparing curves. Switching restarts from level 1.' },
     xGuideTest:   { vi: 'Chơi và đọc chỉ số. Không sửa được gì, kể cả vô tình.',
                     en: 'Play and read the numbers. Nothing can edit, not even by accident.' },
     xGuidePlay:   { vi: 'Chơi rồi nâng/hạ bậc ngay tại bàn. Mọi lượt vào tab Nhật ký.',
                     en: 'Play, then raise or lower the step at the board. Every run goes to the Journal tab.' },
     xGuideDesign: { vi: 'Sửa lưới, thang 10 bậc, game feel, export.',
                     en: 'Edit the grid, the 10-step ladder, game feel, export.' },
-    xGuideTab:    { vi: 'Tab <b>Độ khó</b> mở sẵn — biểu đồ 4 bộ và từng level. Mọi con số đều có dấu',
-                    en: 'The <b>Difficulty</b> tab opens first — charts for all four campaigns and every level. Every number carries a' },
+    xGuideTab:    { vi: 'Tab <b>Độ khó</b> mở sẵn — biểu đồ các bộ và từng level. Mọi con số đều có dấu',
+                    en: 'The <b>Difficulty</b> tab opens first — charts for every campaign and every level. Every number carries a' },
     xGuideTabB:   { vi: 'bấm được.', en: 'you can click.' }
   };
 

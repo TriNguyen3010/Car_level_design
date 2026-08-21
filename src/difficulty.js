@@ -236,12 +236,16 @@
       if (names.length < nColors && names.indexOf(c) < 0) names.push(c);
     });
 
+    /* Column rules are authored, not generated: a retint that dropped them
+     * would silently turn a locked-column level back into a plain one. */
     return {
       cols: cols, rows: rows, colors: names,
       strays: Math.max(1, Math.round(cells * b.strayDensity)),
       hidden: Math.round(cells * b.hiddenRatio),
       revInGrid: String(level.pad).replace(/^\?/, '') !== E.REV,
-      seed: seed
+      seed: seed,
+      lockedCols: (level.lockedCols || []).filter(function (x) { return x.col < cols; }),
+      coloredCols: (level.coloredCols || []).filter(function (x) { return x.col < cols; })
     };
   }
 

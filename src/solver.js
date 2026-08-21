@@ -45,6 +45,13 @@
    * colour, which keeps it admissible. */
   function columnMisplaced(s, c) {
     var col = s.grid[c], R = s.rows, seen = {};
+    /* A coloured column has no choice of target, so the bound is exact rather
+     * than minimised — still admissible, and much tighter. */
+    if (s.want[c]) {
+      var mis = 0;
+      for (var w = 0; w < R; w++) if (col[w].color !== s.want[c]) mis++;
+      return mis;
+    }
     for (var r = 0; r < R; r++) if (col[r].color !== REV) seen[col[r].color] = 1;
     var keys = Object.keys(seen);
     if (!keys.length) return R;
@@ -68,6 +75,24 @@
   function greedyScore(s, c, blind) {
     var col = s.grid[c], R = s.rows, pad = s.pad.color;
     var d = dominant(col, R, blind), score = 0;
+    /* A coloured column only ever wants one colour: dropping anything else in
+     * is pure mess, and dropping the right colour is the only progress. */
+    if (s.want[c]) {
+      var have = 0;
+      for (var wr = 0; wr < R; wr++) {
+        if (blind && col[wr].hidden) continue;
+        if (col[wr].color === s.want[c]) have++;
+      }
+      var atBottom = col[R - 1].color === s.want[c];
+      if (pad === s.want[c]) {
+        return (have === R - 1 ? 1000 : 200 + have * 10) + (atBottom ? -20 : 30);
+      }
+      /* Wrong colour. Still ranked rather than flat-rejected: a flat penalty
+       * makes every coloured column equally bad, the tie breaks on column index,
+       * and the playout walks in circles instead of finishing. Undoing progress
+       * costs more, and ejecting a wrong car from it is worth something. */
+      return -120 - have * 20 + (atBottom ? -30 : 25);
+    }
     if (pad !== REV) {
       var padCount = 0;
       for (var r = 0; r < R; r++) {
@@ -93,7 +118,9 @@
     var out = [], pad = s.pad.color;
     if (pad === REV) return out;
     for (var i = 0, ms = E.legalMoves(s); i < ms.length; i++) {
-      var c = ms[i], d = dominant(s.grid[c], s.rows, blind);
+      var c = ms[i];
+      if (s.want[c]) { if (s.want[c] === pad) out.push(c); continue; }
+      var d = dominant(s.grid[c], s.rows, blind);
       if (d.color === pad) out.push(c);
     }
     return out;
