@@ -216,6 +216,142 @@
     return level;
   }
 
+  function specParse(spec) {
+    var v = String(spec == null ? '' : spec);
+    var hid = v.charAt(0) === '?';
+    return { hidden: hid, color: hid ? v.slice(1) : v };
+  }
+
+  function specMake(hidden, color) { return (hidden ? '?' : '') + color; }
+
+  function readAt(level, at) {
+    return specParse(at.pad ? level.pad : level.grid[at.c][at.r]);
+  }
+
+  function writeAt(level, at, spec) {
+    if (at.pad) level.pad = spec; else level.grid[at.c][at.r] = spec;
+  }
+
+  function countColors(level) {
+    var counts = {};
+    for (var c = 0; c < level.cols; c++) {
+      for (var r = 0; r < level.rows; r++) {
+        var k = specParse(level.grid[c][r]).color;
+        if (k) counts[k] = (counts[k] || 0) + 1;
+      }
+    }
+    var p = specParse(level.pad).color;
+    if (p) counts[p] = (counts[p] || 0) + 1;
+    return counts;
+  }
+
+  function samePlace(a, b) {
+    if (a.pad || b.pad) return !!a.pad === !!b.pad;
+    return a.c === b.c && a.r === b.r;
+  }
+
+  /* Every car of one colour, worst donor first: a car sitting in a column where
+   * its colour is a stray costs nothing to give away, while the last car of a
+   * nearly finished column costs a lot. */
+  function donors(level, color, exclude) {
+    var perCol = [];
+    for (var c = 0; c < level.cols; c++) {
+      var n = 0;
+      for (var r = 0; r < level.rows; r++) if (specParse(level.grid[c][r]).color === color) n++;
+      perCol[c] = n;
+    }
+    var out = [];
+    for (var c2 = 0; c2 < level.cols; c2++) {
+      for (var r2 = 0; r2 < level.rows; r2++) {
+        if (specParse(level.grid[c2][r2]).color !== color) continue;
+        var at = { c: c2, r: r2 };
+        if (exclude && samePlace(at, exclude)) continue;
+        out.push({ at: at, cost: perCol[c2] * 10 + (level.rows - r2) });
+      }
+    }
+    if (specParse(level.pad).color === color && !(exclude && exclude.pad)) {
+      out.push({ at: { pad: true }, cost: -1 });         /* the pad car is free */
+    }
+    out.sort(function (a, b) { return a.cost - b.cost; });
+    return out.map(function (x) { return x.at; });
+  }
+
+  /* How many cars of a colour the level cannot afford to lose: a coloured column
+   * demands a whole column of the colour it asks for. */
+  function reserved(level) {
+    var floor = {}, rows = level.rows;
+    (level.coloredCols || []).forEach(function (x) {
+      if (x && x.color) floor[x.color] = (floor[x.color] || 0) + rows;
+    });
+    return floor;
+  }
+
+  /* Paint by SWAPPING two cars rather than overwriting one.
+   *
+   * Overwriting a cell changes the colour counts, and this game needs every
+   * colour to fill whole columns, so one brush stroke used to make a level
+   * invalid with nothing on screen saying which other cell to fix. A swap moves
+   * a car instead of inventing one, so validity is preserved by construction —
+   * the same reason generate() only ever swaps.
+   *
+   * Painting a colour the board does not hold yet cannot be a swap, so one
+   * column's worth of some other colour is handed over first and the swap runs
+   * after. Returns what it did so the editor can say so.
+   */
+  function paintSwap(level, at, color, palette) {
+    var rows = level.rows;
+    var cur = readAt(level, at);
+    if (cur.color === color) return { mode: 'noop', retinted: 0 };
+
+    var retinted = 0, from = null;
+    var counts = countColors(level);
+    if (color !== REV && !counts[color]) {
+      /* Prefer to take the cars off the colour under the brush — that is the
+       * one the designer is already replacing. */
+      var floor = reserved(level);
+      var spare = function (k) {
+        return k !== REV && counts[k] - rows >= (floor[k] || 0);
+      };
+      var victim = (cur.color && spare(cur.color)) ? cur.color : null;
+      if (!victim) {
+        Object.keys(counts).forEach(function (k) {
+          if (!spare(k)) return;
+          if (!victim || counts[k] > counts[victim]) victim = k;
+        });
+      }
+      if (!victim) return { mode: 'fail', retinted: 0, reason: 'reserved' };
+      /* The pad car counts toward the colour like any other, so it has to be
+       * available to retint too — leaving it out left the victim one car short
+       * whenever the pad happened to be holding one of them. */
+      var spots = donors(level, victim, null);
+      /* the car under the brush goes first, so the stroke always lands */
+      if (cur.color === victim) {
+        spots = [at].concat(spots.filter(function (x) { return !samePlace(x, at); }));
+      }
+      for (var i = 0; i < spots.length && retinted < rows; i++) {
+        var was = readAt(level, spots[i]);
+        writeAt(level, spots[i], specMake(was.hidden, color));
+        retinted++;
+      }
+      from = victim;
+      if (retinted < rows) return { mode: 'fail', retinted: retinted, from: from };
+      cur = readAt(level, at);
+      if (cur.color === color) return { mode: 'retint', retinted: retinted, from: from };
+    }
+
+    var pick = donors(level, color, at)[0];
+    if (!pick) return { mode: retinted ? 'retint' : 'fail', retinted: retinted, from: from };
+    var other = readAt(level, pick);
+    writeAt(level, at, specMake(cur.hidden, other.color));
+    writeAt(level, pick, specMake(other.hidden, cur.color));
+    return {
+      mode: retinted ? 'retint' : 'swap',
+      retinted: retinted, from: from,
+      gave: cur.color, took: other.color,
+      at: pick
+    };
+  }
+
   /* Set the move budget from the actual optimum instead of a round number. */
   function autoBudget(level, slack, nodeCap) {
     var sol = S.solve(E.createState(level), { nodeCap: nodeCap || 200000 });
@@ -252,6 +388,6 @@
   global.Gen = {
     generate: generate, autoBudget: autoBudget, search: search,
     biggestRun: biggestRun, capMatches: capMatches,
-    columnColors: columnColors, legalize: legalize
+    columnColors: columnColors, legalize: legalize, paintSwap: paintSwap
   };
 })(typeof self !== 'undefined' ? self : this);

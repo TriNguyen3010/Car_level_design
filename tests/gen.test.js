@@ -96,3 +96,114 @@ test('legalize keeps a coloured column supplied', function () {
   ok(v.ok, JSON.stringify(v.errors));
   ok(v.counts.cyan >= L.rows, 'cyan = ' + v.counts.cyan);
 });
+
+/* ---- paint swaps instead of overwriting ---- */
+
+function three() {
+  return {
+    cols: 3, rows: 3, moves: 20, pad: 'REV',
+    grid: [['magenta', 'pink', 'magenta'], ['pink', 'magenta', 'pink'], ['purple', 'purple', 'purple']]
+  };
+}
+
+test('painting a colour the board already has keeps it legal', function () {
+  var L = three();
+  var res = G.paintSwap(L, { c: 0, r: 0 }, 'purple', PAL);
+  eq(res.mode, 'swap');
+  eq(L.grid[0][0], 'purple');
+  var v = E.validate(L);
+  ok(v.ok, JSON.stringify(v.errors));
+  eq(v.counts.purple, 3);
+  eq(v.counts.magenta, 3);
+});
+
+test('painting the same colour twice is a no-op, not a swap', function () {
+  var L = three();
+  eq(G.paintSwap(L, { c: 2, r: 0 }, 'purple', PAL).mode, 'noop');
+  eq(JSON.stringify(L.grid), JSON.stringify(three().grid));
+});
+
+test('painting a colour the board lacks hands one column over to it', function () {
+  var L = three();
+  var res = G.paintSwap(L, { c: 0, r: 0 }, 'cyan', PAL);
+  eq(res.retinted, 3);
+  eq(L.grid[0][0], 'cyan');
+  var v = E.validate(L);
+  ok(v.ok, JSON.stringify(v.errors));
+  eq(v.counts.cyan, 3);
+});
+
+test('painting REV moves the one wrong-way car rather than adding another', function () {
+  var L = three();
+  L.grid[1][1] = 'REV';
+  L.pad = 'magenta';
+  G.paintSwap(L, { c: 0, r: 0 }, 'REV', PAL);
+  eq(L.grid[0][0], 'REV');
+  var v = E.validate(L);
+  eq(v.counts.REV, 1);
+  ok(v.ok, JSON.stringify(v.errors));
+});
+
+test('painting the pad swaps with a car on the board', function () {
+  var L = three();
+  var res = G.paintSwap(L, { pad: true }, 'pink', PAL);
+  eq(res.mode, 'swap');
+  eq(L.pad, 'pink');
+  var v = E.validate(L);
+  ok(v.ok, JSON.stringify(v.errors));
+  eq(v.counts.REV, 1);
+});
+
+test('a hidden car keeps its cover when it is swapped', function () {
+  var L = three();
+  L.grid[2][0] = '?purple';
+  G.paintSwap(L, { c: 0, r: 0 }, 'purple', PAL);
+  var specs = [].concat.apply([], L.grid);
+  eq(specs.filter(function (x) { return String(x).charAt(0) === '?'; }).length, 1);
+});
+
+test('a new colour can be introduced when the pad holds one of the victim cars', function () {
+  /* magenta is 3 cars but one of them sits on the pad, so only two are on the
+   * grid — the case that used to report "not enough cars" */
+  var L = {
+    cols: 3, rows: 3, moves: 10, pad: 'magenta',
+    grid: [['magenta', 'purple', 'magenta'], ['purple', 'pink', 'REV'], ['purple', 'pink', 'pink']]
+  };
+  ok(E.validate(L).ok, 'fixture should start legal');
+  var res = G.paintSwap(L, { pad: true }, 'white', PAL);
+  ok(res.mode !== 'fail', JSON.stringify(res));
+  eq(L.pad, 'white');
+  var v = E.validate(L);
+  ok(v.ok, JSON.stringify(v.errors));
+  eq(v.counts.white, 3);
+  eq(v.counts.REV, 1);
+});
+
+test('a new colour never eats the colour a coloured column demands', function () {
+  var L = {
+    cols: 3, rows: 3, moves: 20, pad: 'REV',
+    grid: [['magenta', 'pink', 'magenta'], ['pink', 'magenta', 'pink'], ['purple', 'purple', 'purple']],
+    coloredCols: [{ col: 2, color: 'purple' }, { col: 0, color: 'magenta' }]
+  };
+  ok(E.validate(L).ok, 'fixture should start legal');
+  /* pink is the only colour with cars to spare */
+  var res = G.paintSwap(L, { c: 1, r: 0 }, 'cyan', PAL);
+  ok(res.mode !== 'fail', JSON.stringify(res));
+  eq(res.from, 'pink');
+  var v = E.validate(L);
+  ok(v.ok, JSON.stringify(v.errors));
+  eq(v.counts.purple, 3);
+  eq(v.counts.magenta, 3);
+});
+
+test('with nothing to spare the stroke is refused instead of breaking the level', function () {
+  var L = {
+    cols: 3, rows: 3, moves: 20, pad: 'REV',
+    grid: [['magenta', 'magenta', 'magenta'], ['pink', 'pink', 'pink'], ['purple', 'purple', 'purple']],
+    coloredCols: [{ col: 0, color: 'magenta' }, { col: 1, color: 'pink' }, { col: 2, color: 'purple' }]
+  };
+  var res = G.paintSwap(L, { c: 1, r: 0 }, 'cyan', PAL);
+  eq(res.mode, 'fail');
+  eq(res.reason, 'reserved');
+  ok(E.validate(L).ok, 'the board must be untouched');
+});

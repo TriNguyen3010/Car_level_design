@@ -332,6 +332,14 @@ Nút **Ẩn puzzle** thu khung bàn lại để bảng số và chart dùng hế
 
 Thuần hiển thị, không chạm engine: state, move count, cột đã khoá đều giữ nguyên, và tap cột trong lúc ẩn vẫn tính nước bình thường. Hình học bàn tính từ kích thước thật của khung nên khi ẩn mọi lệnh vẽ bị hoãn lại, hiện lên thì vẽ lại đúng.
 
+## Tô màu là đổi chỗ xe
+
+Tô 1 ô **không ghi đè** mà **đổi chỗ 2 xe** (`Gen.paintSwap`): ô a tô nhận màu đó, con xe cho màu đi thì nhận màu cũ của ô a tô. Count không đổi nên 1 nét cọ không thể làm level thành `invalid` — cùng lý do `generate()` chỉ đổi chỗ chứ không bao giờ ghi đè.
+
+Xe cho màu được chọn theo giá: xe đang là xe lạ trong cột nó đứng thì cho không tốn gì, xe cuối của một cột gần xong thì đắt. Xe trên pad rẻ nhất.
+
+Tô màu **bàn chưa có** thì không đổi chỗ được, nên tool nhường nguyên `rows` xe của một màu khác sang màu mới rồi mới đổi chỗ — log ghi rõ "nhường 3 xe pink thành cyan". Màu nào đang bị **cột màu** đòi thì được chừa lại; hết màu dư thì nét cọ bị từ chối kèm lý do chứ không phá bàn.
+
 ## Đổi kích thước bàn
 
 Đổi `cols × rows` ở tab Edit thì bàn được **chuẩn hoá lại ngay** (`Gen.legalize`): thu cột là mất xe, thêm cột là phải sinh xe, kiểu nào cũng làm màu không còn đủ bội số của rows và level báo `invalid` mà không nói vì sao. `legalize` dựng đúng túi xe một bàn hợp lệ cần — `rows` xe cho mỗi màu-cột, cộng 1 xe lẻ cho pad — rồi giữ lại mọi ô nào túi còn trả được. Bàn đang hợp lệ thì không đổi gì; luật cột nằm ngoài phạm vi bàn mới thì bị bỏ.

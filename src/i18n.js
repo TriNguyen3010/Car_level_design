@@ -372,6 +372,13 @@
     /* game config + column rules */
     xGcExported:  { vi: 'Đã xuất {0} level', en: 'Exported {0} levels' },
     xGcImported:  { vi: 'Đã nhập {0} level', en: 'Imported {0} levels' },
+    xPaintSwap:   { vi: 'đổi chỗ xe {0} ↔ {1} — tô là đổi chỗ, không ghi đè, để bàn luôn hợp lệ',
+                    en: 'swapped {0} ↔ {1} — the brush swaps cars instead of overwriting, so the board stays legal' },
+    xPaintRetint: { vi: 'bàn chưa có màu này nên nhường {0} xe {1} thành {2}',
+                    en: 'the board had none of this colour, so {0} {1} cars became {2}' },
+    xPaintFail:   { vi: 'không đủ xe để đưa màu {0} vào bàn này', en: 'not enough cars to bring {0} onto this board' },
+    xPaintKept:   { vi: 'không đưa {0} vào được: mọi màu còn lại đang bị cột màu đòi. Bỏ luật cột màu trước.',
+                    en: 'cannot bring {0} in: every remaining colour is claimed by a coloured column. Clear a column rule first.' },
     xGcSaved:     { vi: 'Đã tải {0}', en: 'Saved {0}' },
     xGcSaving:    { vi: 'Đang tải file {0}/{1}…', en: 'Saving file {0} of {1}…' },
     xGcBandMiss:  { vi: 'Level {0}: sinh {1} lần, lời giải {2} move — ngoài band [{3}, {4}]',

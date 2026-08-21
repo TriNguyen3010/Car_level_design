@@ -1968,12 +1968,30 @@
     }
   }
 
+  /* The brush swaps cars instead of overwriting one, so a stroke cannot break
+   * the colour-count rule the level is validated against. */
+  function brushOnto(at) {
+    var L = level();
+    var res = G.paintSwap(L, at, brush, Object.keys(PALETTE));
+    if (res.mode === 'fail') {
+      note(I.m(res.reason === 'reserved' ? 'xPaintKept' : 'xPaintFail', brush));
+      return;
+    }
+    if (res.mode === 'noop') return;
+    if ($('brushHidden').checked && brush !== REV) {
+      var spec = at.pad ? L.pad : L.grid[at.c][at.r];
+      if (String(spec).charAt(0) !== '?') {
+        if (at.pad) L.pad = '?' + spec; else L.grid[at.c][at.r] = '?' + spec;
+      }
+    }
+    /* after the reload, not before: afterEdit() rewrites the move log */
+    afterEdit();
+    if (res.retinted) note(I.m('xPaintRetint', res.retinted, res.from, brush));
+    else note(I.m('xPaintSwap', res.gave, res.took));
+  }
+
   function paint(c, r) {
-    return function () {
-      var L = level();
-      L.grid[c][r] = ($('brushHidden').checked && brush !== REV ? '?' : '') + brush;
-      afterEdit();
-    };
+    return function () { brushOnto({ c: c, r: r }); };
   }
   function toggleHidden(c, r) {
     return function () {
@@ -1982,10 +2000,7 @@
       afterEdit();
     };
   }
-  function paintPad() {
-    level().pad = ($('brushHidden').checked && brush !== REV ? '?' : '') + brush;
-    afterEdit();
-  }
+  function paintPad() { brushOnto({ pad: true }); }
   function togglePadHidden() {
     var s = String(level().pad);
     level().pad = s.charAt(0) === '?' ? s.slice(1) : '?' + s;
